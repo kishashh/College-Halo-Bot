@@ -7,8 +7,16 @@ const commands = [
         description: 'Replys with hey!'
     },
     {
+        name: 'bo3',
+        description: 'Outputs a random best of 3 series.'
+    },
+    {
         name: 'bo5',
         description: 'Outputs a random best of 5 series.'
+    },
+    {
+        name: 'bo7',
+        description: 'Outputs a random best of 7 series.'
     },
 ];
 
