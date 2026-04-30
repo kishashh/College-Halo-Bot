@@ -17,11 +17,16 @@ client.on('ready', (c) => {
     console.log(`✅ ${c.user.tag} is online.`);
 });
 
-client.on('messageCreate', (message) => {
-    if (message.author.bot) return;
+client.on('interactionCreate', (interaction) => {
+    if (!interaction.isChatInputCommand()) return;
 
-    if (message.content === 'hello') {
-        message.reply('Hello there!');
+    console.log(interaction.commandName);
+    if (interaction.commandName === 'hey') {
+        interaction.reply('Hey!');
+    }
+
+    if (interaction.commandName === 'bo5') {
+        interaction.reply('Here is a random best of 5 series!');
     }
 });
 
