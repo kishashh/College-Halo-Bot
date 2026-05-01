@@ -18,6 +18,11 @@ const commands = [
         name: 'bo7',
         description: 'Outputs a random best of 7 series.'
     },
+    {
+        name: 'match',
+        description: 'Admin command to initialize the match picking process for league matches.',
+        default_member_permissions: "8" // ADMINISTRATOR
+    }
 ];
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
