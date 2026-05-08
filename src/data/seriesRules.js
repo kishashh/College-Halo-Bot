@@ -1,10 +1,12 @@
 const SERIES_RULES = {
     5: {
-        slots: ["OBJ", "Slayer", "OBJ", "OBJ", "Slayer"]
+        slots: ["OBJ", "Slayer", "OBJ", "OBJ", "Slayer"],
+        pickOrder: ["A", "A", "B", "A", "B"]
     },
 
     7: {
-        slots: ["OBJ", "Slayer", "OBJ", "OBJ", "Slayer", "OBJ", "Slayer"]
+        slots: ["OBJ", "Slayer", "OBJ", "OBJ", "Slayer", "OBJ", "Slayer"],
+        pickOrder: ["A", "A", "B", "A", "B", "B", "A"]
     }
 };
 
