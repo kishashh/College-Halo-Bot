@@ -198,6 +198,7 @@ function isLegalPick(session, combo, gameIndex) {
         ) {
             return false;
         }
+        
 
         /*
             If we reach here, combo is legal.
