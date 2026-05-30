@@ -232,16 +232,38 @@ async function renderSeriesGraphic(data) {
 
     // ── MAP CARDS ─────────────────────────────────────────────────────────────
     const cardsY    = headerY + HEADER_H + PADDING + 20;
-    const cardCount = games.length;
+    const cardCount = bestOf;
+    const seriesGames = Array.from({ length: bestOf }, (_, i) => games[i] || null);
     const cardGap   = 10;
     const cardW     = (CANVAS_W - PADDING * 2 - cardGap * (cardCount - 1)) / cardCount;
     const cardH     = MAP_AREA_H;
     const imageH    = cardH - 80;
     const labelH    = 80;
 
-    for (let i = 0; i < games.length; i++) {
-        const game  = games[i];
+    for (let i = 0; i < bestOf; i++) {
+        const game = seriesGames[i];
         const cardX = PADDING + i * (cardW + cardGap);
+
+        if (!game || !game.map || !game.mode) {
+
+            roundRect(ctx, cardX, cardsY, cardW, cardH, 8);
+
+            ctx.fillStyle = "rgba(255,255,255,0.06)";
+            ctx.fill();
+
+            ctx.font = "bold 22px sans-serif";
+            ctx.fillStyle = "rgba(255,255,255,0.35)";
+            ctx.textAlign = "center";
+
+            ctx.fillText(
+                "TBD",
+                cardX + cardW / 2,
+                cardsY + cardH / 2
+            );
+
+            continue;
+        }
+        
         const teamColor = game.pickedBy === "A" ? teamAColor : teamBColor;
 
         // card bg
