@@ -1,6 +1,15 @@
 const { createCanvas, loadImage } = require("@napi-rs/canvas");
 const path = require("path");
 const fs = require("fs");
+const teamList = require('../../data/teams');
+
+const TEAM_COLORS = Object.fromEntries(
+    teamList.map(team => [
+        team.label,
+        team.color
+    ])
+);
+
 
 // ─── Asset paths ─────────────────────────────────────────────────────────────
 const ASSETS     = path.resolve(__dirname, "../../../assets");
@@ -105,27 +114,6 @@ function drawRedX(ctx, x, y, w, h) {
  * @param {Array}  data.teamBBans       [{ map: "Recharge", mode: "Slayer" }]
  * @returns {Promise<Buffer>} PNG buffer
  */
-
-const TEAM_COLORS = {
-    "OU": "#841617",
-    "Clemson": "#F56600",
-    "Fisher": "#0A1F3E",
-    "Illini": "#13284B",
-    "Butler": "#13294B",
-    "Baylor": "#006B3F",
-    "York": "#009844",
-    "UVU": "#275D38",
-    "UNM": "#BA0C2F",
-    "UoU": "#CC0000",
-    "UNA": "#46166B",
-    "UCF": "#B7A369",
-    "USF": "#006747",
-    "SNU": "#841617",
-    "RIT": "#F76902",
-    "PSU": "#041E42",
-    "NC State": "#ff0000",
-    "MTST": "#00205B"
-};
 
 async function renderSeriesGraphic(data) {
     const {
