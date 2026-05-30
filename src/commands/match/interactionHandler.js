@@ -220,11 +220,11 @@ async function handleComponent(interaction) {
             const embed = buildDraftEmbed(session).setImage("attachment://series.png");
 
             // Send draft into the new channel
-            const draftMessage = await channel.send({
+            const newMessage = await channel.send({
                 content: `<@${session.teamA.id}> <@${session.teamB.id}>`
             });
 
-            const newMessage = await channel.send({
+            const draftMessage = await channel.send({
                 content: `<@${pingId}> gets the first ban.`,
                 embeds: [embed],
                 files: [file],
