@@ -1,4 +1,4 @@
-const { OBJS, SLAYER } = require('../data/maps');
+const { OBJS, SLAYER } = require('../../data/maps');
 
 function randomChoice(arr) {
 
@@ -128,7 +128,7 @@ function generateSeries(length) {
                 no global map repeats yet
             */
             if (!(isBO7 && i === 6)) {
-                const usedMaps = games.map(game => game.map);
+                const usedMaps = games.map(game => game.generatedMap);
 
                 availableMaps = availableMaps.filter(
                     map => !usedMaps.includes(map)
@@ -179,7 +179,7 @@ function generateSeries(length) {
                 no global map repeats yet
             */
             if (!(isBO7 && i === 5)) {
-                const usedMaps = games.map(game => game.map);
+                const usedMaps = games.map(game => game.generatedMap);
 
                 availableMaps = availableMaps.filter(
                     map => !usedMaps.includes(map)

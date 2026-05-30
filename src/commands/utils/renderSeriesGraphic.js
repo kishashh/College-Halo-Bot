@@ -322,7 +322,7 @@ async function renderSeriesGraphic(data) {
         ctx.fillText(mapLabel, cardX + 10, labelY + 30);
 
         // mode name
-        ctx.font = `${Math.max(9, Math.floor(cardW / 12))}px CustomFont`;
+        ctx.font = `${Math.min(14, Math.max(9, Math.floor(cardW / 12)))}px CustomFont`;
         ctx.fillStyle = MODE_TEXT;
         ctx.fillText(game.mode.toUpperCase(), cardX + 10, labelY + 50);
 
@@ -334,144 +334,146 @@ async function renderSeriesGraphic(data) {
     }
 
     // ── BAN SECTION ───────────────────────────────────────────────────────────
-    const banAreaY  = cardsY + MAP_AREA_H + PADDING;
-    const banCardW  = 170;
-    const banCardH  = 120;
-    const banImageH = 85;
-    const banLabelH = banCardH - banImageH;
-    const banGap    = 8;
+    if (teamABans.length > 0 || teamBBans.length > 0) {
+    
+        const banAreaY  = cardsY + MAP_AREA_H + PADDING;
+        const banCardW  = 170;
+        const banCardH  = 120;
+        const banImageH = 85;
+        const banLabelH = banCardH - banImageH;
+        const banGap    = 8;
 
-    // center divider
-    ctx.strokeStyle = TEXT_DIM + "AA";
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(midX, banAreaY +5);
-    ctx.lineTo(midX, banAreaY + BAN_AREA_H);
-    ctx.stroke();
-    ctx.setLineDash([]);
+        // center divider
+        ctx.strokeStyle = TEXT_DIM + "AA";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(midX, banAreaY +5);
+        ctx.lineTo(midX, banAreaY + BAN_AREA_H);
+        ctx.stroke();
+        ctx.setLineDash([]);
 
-    const teamABanSlots = 1;
-    const teamBBanSlots = bestOf === 7 ? 2 : 1;
+        const teamABanSlots = 1;
+        const teamBBanSlots = bestOf === 7 ? 2 : 1;
 
-    const seriesTeamABans = Array.from(
-        { length: teamABanSlots },
-        (_, i) => teamABans[i] || null
-    );
+        const seriesTeamABans = Array.from(
+            { length: teamABanSlots },
+            (_, i) => teamABans[i] || null
+        );
 
-    const seriesTeamBBans = Array.from(
-        { length: teamBBanSlots },
-        (_, i) => teamBBans[i] || null
-    );
+        const seriesTeamBBans = Array.from(
+            { length: teamBBanSlots },
+            (_, i) => teamBBans[i] || null
+        );
 
-    async function drawBanCards(bans, startX, dir, label, color) {
+        async function drawBanCards(bans, startX, dir, label, color) {
 
-        // text above cards
-        ctx.font = "bold 11px CustomFont";
-        ctx.fillStyle = color;
-        ctx.textAlign = dir === 1 ? "left" : "right";
+            // text above cards
+            ctx.font = "bold 11px CustomFont";
+            ctx.fillStyle = color;
+            ctx.textAlign = dir === 1 ? "left" : "right";
 
-        const textX = dir === 1
-            ? startX
-            : startX;
+            const textX = dir === 1
+                ? startX
+                : startX;
 
-        ctx.fillText(label, textX, banAreaY + 14);
+            ctx.fillText(label, textX, banAreaY + 14);
 
-        for (let i = 0; i < bans.length; i++) {
-            const ban = bans[i];
+            for (let i = 0; i < bans.length; i++) {
+                const ban = bans[i];
 
-            const bx  = dir === 1
-                ? startX + i * (banCardW + banGap)
-                : startX - i * (banCardW + banGap) - banCardW;
+                const bx  = dir === 1
+                    ? startX + i * (banCardW + banGap)
+                    : startX - i * (banCardW + banGap) - banCardW;
 
-            const by  = banAreaY + 22;
+                const by  = banAreaY + 22;
 
-            if (!ban || !ban.map || !ban.mode) {
+                if (!ban || !ban.map || !ban.mode) {
+                    roundRect(ctx, bx, by, banCardW, banCardH, 6);
+                    ctx.fillStyle = "rgba(255,255,255,0.15)";
+                    ctx.fill();
+
+                    ctx.font = "bold 16px CustomFont";
+                    ctx.fillStyle = "rgba(255,255,255,0.35)";
+                    ctx.textAlign = "center";
+                    ctx.fillText("TBD", bx + banCardW / 2, by + banCardH / 2);
+
+                    continue;
+                }
+
                 roundRect(ctx, bx, by, banCardW, banCardH, 6);
-                ctx.fillStyle = "rgba(255,255,255,0.15)";
+                ctx.fillStyle = SURFACE;
                 ctx.fill();
 
-                ctx.font = "bold 16px CustomFont";
-                ctx.fillStyle = "rgba(255,255,255,0.35)";
-                ctx.textAlign = "center";
-                ctx.fillText("TBD", bx + banCardW / 2, by + banCardH / 2);
+                const mapImg = await tryLoadImage(path.join(MAPS_DIR, `${ban.map}.png`))
+                            || await tryLoadImage(path.join(MAPS_DIR, `${ban.map}.jpg`));
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(bx + 6, by);
+                ctx.lineTo(bx + banCardW - 6, by);
+                ctx.quadraticCurveTo(bx + banCardW, by, bx + banCardW, by + 6);
+                ctx.lineTo(bx + banCardW, by + banImageH);
+                ctx.lineTo(bx, by + banImageH);
+                ctx.lineTo(bx, by + 6);
+                ctx.quadraticCurveTo(bx, by, bx + 6, by);
+                ctx.closePath();
+                ctx.clip();
+                if (mapImg) {
+                    drawImageCover(ctx, mapImg, bx, by, banCardW, banImageH);
+                } else {
+                    ctx.fillStyle = "#111520";
+                    ctx.fillRect(bx, by, banCardW, banImageH);
+                }
+                drawRedX(ctx, bx, by, banCardW, banImageH);
+                ctx.restore();
 
-                continue;
+                // label strip
+                ctx.fillStyle = MAPMODE_BANNER;
+                ctx.fillRect(bx, by + banImageH, banCardW, banLabelH);
+
+                // map name
+                ctx.font = "bold 10px CustomFont";
+                ctx.fillStyle = MAP_TEXT;
+                ctx.textAlign = "left";
+                let label = ban.map.toUpperCase();
+                while (ctx.measureText(label).width > banCardW - 10 && label.length > 3) {
+                    label = label.slice(0, -1);
+                }
+                ctx.fillText(label, bx + 6, by + banImageH + 14);
+
+                // mode
+                if (ban.mode) {
+                    ctx.font = "9px CustomFont";
+                    ctx.fillStyle = MODE_TEXT;
+                    ctx.fillText(ban.mode.toUpperCase(), bx + 6, by + banImageH + 26);
+                }
+
+                // team colored bottom bar
+                ctx.fillStyle = color;
+                ctx.fillRect(bx, by + banCardH - 3, banCardW, 3);
+
+                ctx.textAlign = "left";
             }
-
-            roundRect(ctx, bx, by, banCardW, banCardH, 6);
-            ctx.fillStyle = SURFACE;
-            ctx.fill();
-
-            const mapImg = await tryLoadImage(path.join(MAPS_DIR, `${ban.map}.png`))
-                        || await tryLoadImage(path.join(MAPS_DIR, `${ban.map}.jpg`));
-            ctx.save();
-            ctx.beginPath();
-            ctx.moveTo(bx + 6, by);
-            ctx.lineTo(bx + banCardW - 6, by);
-            ctx.quadraticCurveTo(bx + banCardW, by, bx + banCardW, by + 6);
-            ctx.lineTo(bx + banCardW, by + banImageH);
-            ctx.lineTo(bx, by + banImageH);
-            ctx.lineTo(bx, by + 6);
-            ctx.quadraticCurveTo(bx, by, bx + 6, by);
-            ctx.closePath();
-            ctx.clip();
-            if (mapImg) {
-                drawImageCover(ctx, mapImg, bx, by, banCardW, banImageH);
-            } else {
-                ctx.fillStyle = "#111520";
-                ctx.fillRect(bx, by, banCardW, banImageH);
-            }
-            drawRedX(ctx, bx, by, banCardW, banImageH);
-            ctx.restore();
-
-            // label strip
-            ctx.fillStyle = MAPMODE_BANNER;
-            ctx.fillRect(bx, by + banImageH, banCardW, banLabelH);
-
-            // map name
-            ctx.font = "bold 10px CustomFont";
-            ctx.fillStyle = MAP_TEXT;
-            ctx.textAlign = "left";
-            let label = ban.map.toUpperCase();
-            while (ctx.measureText(label).width > banCardW - 10 && label.length > 3) {
-                label = label.slice(0, -1);
-            }
-            ctx.fillText(label, bx + 6, by + banImageH + 14);
-
-            // mode
-            if (ban.mode) {
-                ctx.font = "9px CustomFont";
-                ctx.fillStyle = MODE_TEXT;
-                ctx.fillText(ban.mode.toUpperCase(), bx + 6, by + banImageH + 26);
-            }
-
-            // team colored bottom bar
-            ctx.fillStyle = color;
-            ctx.fillRect(bx, by + banCardH - 3, banCardW, 3);
-
-            ctx.textAlign = "left";
         }
+
+        await drawBanCards(
+            seriesTeamABans,
+            midX - banGap * 3,
+            -1,
+            "",
+            teamAColor
+
+        );
+
+        await drawBanCards(
+            seriesTeamBBans,
+            midX + banGap * 3,
+            1,
+            "",
+            teamBColor
+
+        );
     }
-
-    await drawBanCards(
-        seriesTeamABans,
-        midX - banGap * 3,
-        -1,
-        "",
-        teamAColor
-
-    );
-
-    await drawBanCards(
-        seriesTeamBBans,
-        midX + banGap * 3,
-        1,
-        "",
-        teamBColor
-
-    );
-
     return canvas.toBuffer("image/png");
 }
 
