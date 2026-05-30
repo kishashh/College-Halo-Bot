@@ -14,12 +14,6 @@ function buildDraftEmbed(session) {
     const gamesText = rules.slots.map((slot, i) => {
         const pick = session.picks[i];
         const picker = rules.pickOrder[i];
-
-        // if (pick) {
-        //     return `**Game ${i + 1} (${slot}) — Team ${picker}:** ${pick.mode} - ${pick.map}`;
-        // }
-
-        // return `**Game ${i + 1} (${slot}) — Team ${picker}:** Not picked`;
     }).join("\n");
 
     embed.addFields({
