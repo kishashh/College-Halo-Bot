@@ -17,7 +17,8 @@ const {
 } = require('./draftEmbed');
 
 const {
-    getCurrentPickerUserId
+    getCurrentPickerUserId,
+    getCurrentPicker
 } = require('./draftLogic');
 
 async function handleComponent(interaction) {
@@ -154,20 +155,26 @@ async function handleComponent(interaction) {
                 });
             }
 
-            // Draft still in progress — regenerate image
-            await interaction.deferUpdate();
+            // Draft still in progress — ping next picker
+            const picker = getCurrentPicker(session);
+            const pingId = picker === "A" ? session.teamA.id : session.teamB.id;
 
             const file = await buildDraftGraphic(session);
+            const embed = buildDraftEmbed(session).setImage("attachment://series.png");
 
-            const embed = buildDraftEmbed(session)
-                .setImage("attachment://series.png");
+            // Delete old message and send a new one
+            await interaction.message.delete();
 
-            return interaction.editReply({
-                content: null,
+            const newMessage = await interaction.channel.send({
+                content: `<@${pingId}>`,
                 embeds: [embed],
                 files: [file],
                 components: buildDraftComponents(session)
             });
+
+            // Update session to track new message ID
+            matchSessions.delete(interaction.message.id);
+            matchSessions.set(newMessage.id, session);;
         }
     }
 
@@ -186,6 +193,9 @@ async function handleComponent(interaction) {
             session.picks = [];
             session.extraMapBans = [];
 
+            // Ping first picker (Team A)
+            const pingId = session.teamA.id;
+
             await interaction.deferUpdate();
 
             const file = await buildDraftGraphic(session);
@@ -194,7 +204,7 @@ async function handleComponent(interaction) {
                 .setImage("attachment://series.png");
 
             return interaction.editReply({
-                content: null,
+                content: `<@${pingId}>`,
                 embeds: [embed],
                 files: [file],
                 components: buildDraftComponents(session)
