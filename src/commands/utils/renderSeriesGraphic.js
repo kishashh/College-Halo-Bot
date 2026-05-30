@@ -344,20 +344,21 @@ async function renderSeriesGraphic(data) {
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
-    ctx.moveTo(midX, banAreaY -35);
-    ctx.lineTo(midX, banAreaY + BAN_AREA_H -12);
+    ctx.moveTo(midX, banAreaY +5);
+    ctx.lineTo(midX, banAreaY + BAN_AREA_H);
     ctx.stroke();
     ctx.setLineDash([]);
 
-    const banSlotsPerTeam = bestOf === 7 ? 2 : 1;
+    const teamABanSlots = 1;
+    const teamBBanSlots = bestOf === 7 ? 2 : 1;
 
     const seriesTeamABans = Array.from(
-        { length: banSlotsPerTeam },
+        { length: teamABanSlots },
         (_, i) => teamABans[i] || null
     );
 
     const seriesTeamBBans = Array.from(
-        { length: banSlotsPerTeam },
+        { length: teamBBanSlots },
         (_, i) => teamBBans[i] || null
     );
 
@@ -451,11 +452,6 @@ async function renderSeriesGraphic(data) {
         }
     }
 
-
-    // await drawBanCards(seriesTeamABans, midX - banGap * 3, -1, "", teamAColor);
-    // await drawBanCards(seriesTeamBBans, midX + banGap * 3, 1, "", teamBColor);
-
-    
     await drawBanCards(
         seriesTeamABans,
         midX - banGap * 3,
