@@ -2,6 +2,7 @@ const bo3 = require('../commands/bo3');
 const bo5 = require('../commands/bo5');
 const bo7 = require('../commands/bo7');
 const match = require('../commands/match');
+const test = require('../commands/test');
 
 module.exports = (client) => {
 
@@ -26,6 +27,9 @@ module.exports = (client) => {
 
                     case 'match':
                         return match.execute(interaction);
+
+                    case 'test':
+                        return test.execute(interaction);
                 }
             }
 
