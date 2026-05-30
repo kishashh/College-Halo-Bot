@@ -1,4 +1,4 @@
-const { createCanvas, loadImage } = require("@napi-rs/canvas");
+const { createCanvas, loadImage, GlobalFonts } = require("@napi-rs/canvas");
 const path = require("path");
 const fs = require("fs");
 const teamList = require('../../data/teams');
@@ -10,6 +10,8 @@ const TEAM_COLORS = Object.fromEntries(
     ])
 );
 
+GlobalFonts.registerFromPath(path.join(__dirname, "../../../assets/fonts/Bold.ttf"), "CustomFont");
+GlobalFonts.registerFromPath(path.join(__dirname, "../../../assets/fonts/Regular.ttf"), "CustomFont");
 
 // ─── Asset paths ─────────────────────────────────────────────────────────────
 const ASSETS     = path.resolve(__dirname, "../../../assets");
@@ -208,13 +210,13 @@ async function renderSeriesGraphic(data) {
     }
 
     // VS
-    ctx.font = "bold 30px sans-serif";
+    ctx.font = "bold 30px CustomFont";
     ctx.fillStyle = TEXT_DIM;
     ctx.textAlign = "center";
     ctx.fillText("VS", midX, headerY + HEADER_H / 2 + 7);
 
     // BO label
-    ctx.font = "bold 11px sans-serif";
+    ctx.font = "bold 11px CustomFont";
     ctx.fillStyle = MODE_TEXT;
     ctx.fillText(`BEST OF ${bestOf}`, midX, headerY + HEADER_H / 2 + 24);
 
@@ -239,7 +241,7 @@ async function renderSeriesGraphic(data) {
             ctx.fillStyle = "rgba(255,255,255,0.15)";
             ctx.fill();
 
-            ctx.font = "bold 22px sans-serif";
+            ctx.font = "bold 22px CustomFont";
             ctx.fillStyle = "rgba(255,255,255,0.35)";
             ctx.textAlign = "center";
 
@@ -310,17 +312,17 @@ async function renderSeriesGraphic(data) {
         // map name (auto-size to fit card width)
         let mapLabel = game.map.toUpperCase();
         let fontSize = Math.min(18, Math.floor(cardW / 6.5));
-        ctx.font = `bold ${fontSize}px sans-serif`;
+        ctx.font = `bold ${fontSize}px CustomFont`;
         ctx.textAlign = "left";
         while (ctx.measureText(mapLabel).width > cardW - 18 && fontSize > 9) {
             fontSize--;
-            ctx.font = `bold ${fontSize}px sans-serif`;
+            ctx.font = `bold ${fontSize}px CustomFont`;
         }
         ctx.fillStyle = MAP_TEXT;
         ctx.fillText(mapLabel, cardX + 10, labelY + 30);
 
         // mode name
-        ctx.font = `${Math.max(9, Math.floor(cardW / 12))}px sans-serif`;
+        ctx.font = `${Math.max(9, Math.floor(cardW / 12))}px CustomFont`;
         ctx.fillStyle = MODE_TEXT;
         ctx.fillText(game.mode.toUpperCase(), cardX + 10, labelY + 50);
 
@@ -365,7 +367,7 @@ async function renderSeriesGraphic(data) {
     async function drawBanCards(bans, startX, dir, label, color) {
 
         // text above cards
-        ctx.font = "bold 11px sans-serif";
+        ctx.font = "bold 11px CustomFont";
         ctx.fillStyle = color;
         ctx.textAlign = dir === 1 ? "left" : "right";
 
@@ -389,7 +391,7 @@ async function renderSeriesGraphic(data) {
                 ctx.fillStyle = "rgba(255,255,255,0.15)";
                 ctx.fill();
 
-                ctx.font = "bold 16px sans-serif";
+                ctx.font = "bold 16px CustomFont";
                 ctx.fillStyle = "rgba(255,255,255,0.35)";
                 ctx.textAlign = "center";
                 ctx.fillText("TBD", bx + banCardW / 2, by + banCardH / 2);
@@ -428,7 +430,7 @@ async function renderSeriesGraphic(data) {
             ctx.fillRect(bx, by + banImageH, banCardW, banLabelH);
 
             // map name
-            ctx.font = "bold 10px sans-serif";
+            ctx.font = "bold 10px CustomFont";
             ctx.fillStyle = MAP_TEXT;
             ctx.textAlign = "left";
             let label = ban.map.toUpperCase();
@@ -439,7 +441,7 @@ async function renderSeriesGraphic(data) {
 
             // mode
             if (ban.mode) {
-                ctx.font = "9px sans-serif";
+                ctx.font = "9px CustomFont";
                 ctx.fillStyle = MODE_TEXT;
                 ctx.fillText(ban.mode.toUpperCase(), bx + 6, by + banImageH + 26);
             }
