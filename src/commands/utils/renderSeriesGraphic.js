@@ -236,7 +236,7 @@ async function renderSeriesGraphic(data) {
 
             roundRect(ctx, cardX, cardsY, cardW, cardH, 8);
 
-            ctx.fillStyle = "rgba(255,255,255,0.06)";
+            ctx.fillStyle = "rgba(255,255,255,0.15)";
             ctx.fill();
 
             ctx.font = "bold 22px sans-serif";
@@ -349,6 +349,18 @@ async function renderSeriesGraphic(data) {
     ctx.stroke();
     ctx.setLineDash([]);
 
+    const banSlotsPerTeam = bestOf === 7 ? 2 : 1;
+
+    const seriesTeamABans = Array.from(
+        { length: banSlotsPerTeam },
+        (_, i) => teamABans[i] || null
+    );
+
+    const seriesTeamBBans = Array.from(
+        { length: banSlotsPerTeam },
+        (_, i) => teamBBans[i] || null
+    );
+
     async function drawBanCards(bans, startX, dir, label, color) {
 
         // text above cards
@@ -370,6 +382,19 @@ async function renderSeriesGraphic(data) {
                 : startX - i * (banCardW + banGap) - banCardW;
 
             const by  = banAreaY + 22;
+
+            if (!ban || !ban.map || !ban.mode) {
+                roundRect(ctx, bx, by, banCardW, banCardH, 6);
+                ctx.fillStyle = "rgba(255,255,255,0.15)";
+                ctx.fill();
+
+                ctx.font = "bold 16px sans-serif";
+                ctx.fillStyle = "rgba(255,255,255,0.35)";
+                ctx.textAlign = "center";
+                ctx.fillText("TBD", bx + banCardW / 2, by + banCardH / 2);
+
+                continue;
+            }
 
             roundRect(ctx, bx, by, banCardW, banCardH, 6);
             ctx.fillStyle = SURFACE;
@@ -426,8 +451,13 @@ async function renderSeriesGraphic(data) {
         }
     }
 
+
+    // await drawBanCards(seriesTeamABans, midX - banGap * 3, -1, "", teamAColor);
+    // await drawBanCards(seriesTeamBBans, midX + banGap * 3, 1, "", teamBColor);
+
+    
     await drawBanCards(
-        teamABans,
+        seriesTeamABans,
         midX - banGap * 3,
         -1,
         "",
@@ -436,7 +466,7 @@ async function renderSeriesGraphic(data) {
     );
 
     await drawBanCards(
-        teamBBans,
+        seriesTeamBBans,
         midX + banGap * 3,
         1,
         "",

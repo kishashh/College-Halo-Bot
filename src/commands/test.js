@@ -7,20 +7,28 @@ async function execute(interaction) {
     const buffer = await renderSeriesGraphic({
         teamA: "UCF",
         teamB: "UNA",
-        bestOf: 5,
+
+        teamAColor: "#B7A369",
+        teamBColor: "#46166B",
+
+        bestOf: 7,
+
         games: [
-            { map: "Origin",    mode: "CTF",        pickedBy: "A" },
-            { map: "Live Fire", mode: "Slayer",      pickedBy: "A" },
-            { map: "Lattice",   mode: "Oddball",     pickedBy: "B" },
-            { map: "Recharge",  mode: "KOTH",        pickedBy: "A" },
-            { map: "Aquarius",  mode: "Slayer",      pickedBy: "B" },
-            { map: "Recharge",  mode: "KOTH",        pickedBy: "B" },
-            { map: "Aquarius",  mode: "Slayer",      pickedBy: "A" },
+            { map: "Origin",     mode: "CTF",       pickedBy: "A" },
+            { map: "Live Fire",  mode: "Slayer",    pickedBy: "A" },
+            { map: "Lattice",    mode: "Oddball",   pickedBy: "B" },
+            { map: "Recharge",   mode: "KOTH",      pickedBy: "A" },
+            { map: "Aquarius",   mode: "Slayer",    pickedBy: "B" },
+            { map: "Solitude",   mode: "Strongholds", pickedBy: "B" },
+            null,
         ],
-        teamABans: [{ map: "Forbidden", mode: "CTF" }],
+
+        teamABans: [
+            { map: "Forbidden", mode: "CTF" }
+        ],
+
         teamBBans: [
             { map: "Fortress", mode: "CTF" },
-            { map: "Fortress", mode: "Slayer" },
         ],
     });
 

@@ -188,8 +188,15 @@ async function handleComponent(interaction) {
 
             await interaction.deferUpdate();
 
+            const file = await buildDraftGraphic(session);
+
+            const embed = buildDraftEmbed(session)
+                .setImage("attachment://series.png");
+
             return interaction.editReply({
-                embeds: [buildDraftEmbed(session)],
+                content: null,
+                embeds: [embed],
+                files: [file],
                 components: buildDraftComponents(session)
             });
         }
