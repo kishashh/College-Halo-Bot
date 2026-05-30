@@ -11,40 +11,21 @@ function buildDraftEmbed(session) {
         .setDescription(getDraftPrompt(session))
         .setColor(0x00EEEE);
 
-    embed.addFields(
-        {
-            name: "Teams",
-            value:
-                `**Team A:** ${session.teamA.name} - <@${session.teamA.id}>\n` +
-                `**Team B:** ${session.teamB.name} - <@${session.teamB.id}>`
-        },
-        {
-            name: "Initial Bans",
-            value: session.bans.length
-                ? session.bans
-                    .map((ban, i) => `**Team ${i === 0 ? "A" : "B"}:** ${ban.mode} - ${ban.map}`)
-                    .join("\n")
-                : "None yet"
-        }
-    );
-
     const gamesText = rules.slots.map((slot, i) => {
         const pick = session.picks[i];
         const picker = rules.pickOrder[i];
-        if (pick) {
-            return `**Game ${i + 1} (${slot}) — Team ${picker}:** ${pick.mode} - ${pick.map}`;
-        }
-        return `**Game ${i + 1} (${slot}) — Team ${picker}:** Not picked`;
+
+        // if (pick) {
+        //     return `**Game ${i + 1} (${slot}) — Team ${picker}:** ${pick.mode} - ${pick.map}`;
+        // }
+
+        // return `**Game ${i + 1} (${slot}) — Team ${picker}:** Not picked`;
     }).join("\n");
 
-    embed.addFields({ name: "Series", value: gamesText });
-
-    if (session.extraMapBans.length) {
-        embed.addFields({
-            name: "Team B's Game 7 Map Ban",
-            value: session.extraMapBans.join(", ")
-        });
-    }
+    embed.addFields({
+        name: "Series",
+        value: gamesText
+    });
 
     if (session.phase === "complete") {
         embed.setDescription("✅ Draft complete.");
@@ -53,28 +34,44 @@ function buildDraftEmbed(session) {
     return embed;
 }
 
-// Separate async function for when the draft is complete — sends the graphic
-async function sendDraftCompleteEmbed(interaction, session) {
+async function sendDraftGraphicEmbed(interaction, session) {
+
     const rules = SERIES_RULES[session.seriesLength];
 
-    // Map session data into the format renderSeriesGraphic expects
     const games = rules.slots.map((slot, i) => {
+
         const pick = session.picks[i];
-        const picker = rules.pickOrder[i]; // "A" or "B"
+        const picker = rules.pickOrder[i];
+
+        if (!pick) return null;
+
         return {
-            map: pick?.map ?? "TBD",
-            mode: pick?.mode ?? slot,
+            map: pick.map,
+            mode: pick.mode,
             pickedBy: picker,
         };
     });
 
-    // session.bans is [{ map, mode }, { map, mode }] — first is Team A, second is Team B
     const teamABans = session.bans
         .filter((_, i) => i % 2 === 0)
-        .map(b => ({ map: b.map, mode: b.mode }));
-    const teamBBans = session.bans
-        .filter((_, i) => i % 2 !== 0)
-        .map(b => ({ map: b.map, mode: b.mode }));
+        .map(b => ({
+            map: b.map,
+            mode: b.mode
+        }));
+
+    const teamBBans = [
+        ...session.bans
+            .filter((_, i) => i % 2 !== 0)
+            .map(b => ({
+                map: b.map,
+                mode: b.mode
+            })),
+
+        ...session.extraMapBans.map(map => ({
+            map,
+            mode: "Slayer"
+        }))
+    ];
 
     const buffer = await renderSeriesGraphic({
         teamA: session.teamA.name,
@@ -85,7 +82,9 @@ async function sendDraftCompleteEmbed(interaction, session) {
         teamBBans,
     });
 
-    const file = new AttachmentBuilder(buffer, { name: 'series.png' });
+    const file = new AttachmentBuilder(buffer, {
+        name: 'series.png'
+    });
 
     const embed = new EmbedBuilder()
         .setTitle(`✅ Draft Complete`)
@@ -96,10 +95,67 @@ async function sendDraftCompleteEmbed(interaction, session) {
         .setImage('attachment://series.png')
         .setColor(0x00EEEE);
 
-    await interaction.editReply({ embeds: [embed], files: [file] });
+    await interaction.editReply({
+        embeds: [embed],
+        files: [file]
+    });
+}
+
+async function buildDraftGraphic(session) {
+
+    const rules = SERIES_RULES[session.seriesLength];
+
+    const games = rules.slots.map((slot, i) => {
+
+        const pick = session.picks[i];
+        const picker = rules.pickOrder[i];
+
+        if (!pick) return null;
+
+        return {
+            map: pick.map,
+            mode: pick.mode,
+            pickedBy: picker,
+        };
+    });
+
+    const teamABans = session.bans
+        .filter((_, i) => i % 2 === 0)
+        .map(b => ({
+            map: b.map,
+            mode: b.mode
+        }));
+
+    const teamBBans = [
+        ...session.bans
+            .filter((_, i) => i % 2 !== 0)
+            .map(b => ({
+                map: b.map,
+                mode: b.mode
+            })),
+
+        ...session.extraMapBans.map(map => ({
+            map,
+            mode: "Slayer"
+        }))
+    ];
+
+    const buffer = await renderSeriesGraphic({
+        teamA: session.teamA.name,
+        teamB: session.teamB.name,
+        bestOf: session.seriesLength,
+        games,
+        teamABans,
+        teamBBans,
+    });
+
+    return new AttachmentBuilder(buffer, {
+        name: "series.png"
+    });
 }
 
 module.exports = {
     buildDraftEmbed,
-    sendDraftCompleteEmbed,
+    sendDraftGraphicEmbed,
+    buildDraftGraphic
 };

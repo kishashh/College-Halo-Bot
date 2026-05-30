@@ -192,8 +192,12 @@ function generateSeries(length) {
         }
 
         games.push({
-            mode,
-            map
+            mode: null,
+            map: null,
+            pickedBy: null,
+
+            generatedMode: mode,
+            generatedMap: map
         });
     }
 

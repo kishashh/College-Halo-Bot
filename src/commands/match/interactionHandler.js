@@ -13,7 +13,7 @@ const {
 
 const {
     buildDraftEmbed,
-    sendDraftCompleteEmbed
+    buildDraftGraphic
 } = require('./draftEmbed');
 
 const {
@@ -140,25 +140,32 @@ async function handleComponent(interaction) {
             if (session.phase === "complete") {
                 await interaction.deferUpdate();
 
-                // Update the original message to show final text embed (no components)
-                await interaction.editReply({
-                    content: `## ✅ Draft Complete\n${session.teamA.name} vs ${session.teamB.name}`,
-                    embeds: [buildDraftEmbed(session)],
+                const file = await buildDraftGraphic(session);
+
+                const embed = buildDraftEmbed(session)
+                    .setDescription("✅ Draft complete.")
+                    .setImage("attachment://series.png");
+
+                return interaction.editReply({
+                    content: null,
+                    embeds: [embed],
+                    files: [file],
                     components: []
                 });
-
-                // Send the graphic as a follow-up message
-                await sendDraftCompleteEmbed(interaction, session);
-
-                return;
             }
 
-            // Draft still in progress — update embed normally
+            // Draft still in progress — regenerate image
             await interaction.deferUpdate();
+
+            const file = await buildDraftGraphic(session);
+
+            const embed = buildDraftEmbed(session)
+                .setImage("attachment://series.png");
 
             return interaction.editReply({
                 content: null,
-                embeds: [buildDraftEmbed(session)],
+                embeds: [embed],
+                files: [file],
                 components: buildDraftComponents(session)
             });
         }
