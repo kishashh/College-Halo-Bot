@@ -1,37 +1,36 @@
-const {
-    EmbedBuilder
-} = require('discord.js');
-
-const {
-    generateSeries
-} = require('../utils/seriesGenerator');
+const { EmbedBuilder, AttachmentBuilder } = require('discord.js');
+const { generateSeries } = require('./utils/seriesGenerator');
+const { renderSeriesGraphic } = require('./utils/renderSeriesGraphic');
 
 async function execute(interaction) {
+    await interaction.deferReply();
 
-    const games = generateSeries(3);
+    const rawGames = generateSeries(3);
+    const games = rawGames.map((g, i) => ({
+        map: g.generatedMap,
+        mode: g.generatedMode,
+        pickedBy: i % 2 === 0 ? "A" : "B"
+    }));
 
+    const buffer = await renderSeriesGraphic({
+        teamA: "Eagle",
+        teamB: "Cobra",
+        bestOf: 3,
+        teamAColor: "#d84141",
+        teamBColor: "#49b8fe",
+        games,
+        teamABans: [],
+        teamBBans: [],
+    });
+
+    const file = new AttachmentBuilder(buffer, { name: 'series.png' });
     const embed = new EmbedBuilder()
         .setTitle('🎮 BO3 Series')
         .setDescription('Randomly generated BO3')
         .setColor(0x00EEEE)
-        .setThumbnail(
-            'https://static-cdn.jtvnw.net/jtv_user_pictures/2b3fb5fc-ba4b-4d42-baae-852eb79d89ea-profile_image-70x70.png'
-        );
+        .setImage('attachment://series.png');
 
-    games.forEach((game, index) => {
-
-        embed.addFields({
-            name: `Game ${index + 1}`,
-            value: `${game.mode} - ${game.map}`
-        });
-
-    });
-
-    return interaction.reply({
-        embeds: [embed]
-    });
+    await interaction.editReply({ embeds: [embed], files: [file] });
 }
 
-module.exports = {
-    execute
-};
+module.exports = { execute };
