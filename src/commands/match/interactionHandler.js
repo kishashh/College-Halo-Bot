@@ -12,7 +12,8 @@ const {
 } = require('./components');
 
 const {
-    buildDraftEmbed
+    buildDraftEmbed,
+    buildDraftGraphic
 } = require('./draftEmbed');
 
 const {
@@ -135,22 +136,38 @@ async function handleComponent(interaction) {
                 session.phase = "picks";
             }
 
+            // Draft complete — send the graphic
+            if (session.phase === "complete") {
+                await interaction.deferUpdate();
+
+                const file = await buildDraftGraphic(session);
+
+                const embed = buildDraftEmbed(session)
+                    .setDescription("✅ Draft complete.")
+                    .setImage("attachment://series.png");
+
+                return interaction.editReply({
+                    content: null,
+                    embeds: [embed],
+                    files: [file],
+                    components: []
+                });
+            }
+
+            // Draft still in progress — regenerate image
             await interaction.deferUpdate();
 
-            await interaction.editReply({
-                embeds: [buildDraftEmbed(session)],
-                components: buildDraftComponents(session)
-            });
+            const file = await buildDraftGraphic(session);
+
+            const embed = buildDraftEmbed(session)
+                .setImage("attachment://series.png");
 
             return interaction.editReply({
-                content: session.phase === "complete"
-                    ? `## ✅ Draft Complete\n${session.teamA.name} vs ${session.teamB.name}`
-                    : null,
-                embeds: [buildDraftEmbed(session)],
+                content: null,
+                embeds: [embed],
+                files: [file],
                 components: buildDraftComponents(session)
             });
-
-            return;
         }
     }
 

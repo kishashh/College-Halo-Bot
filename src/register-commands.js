@@ -21,7 +21,12 @@ const commands = [
 
     new SlashCommandBuilder()
         .setName('match')
-        .setDescription('Creates a league match draft')
+        .setDescription('Creates a league match draft'),
+
+    new SlashCommandBuilder()
+        .setName('test')
+        .setDescription('Test the series graphic'),
+
 ].map(command => command.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
