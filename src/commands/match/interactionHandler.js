@@ -48,14 +48,8 @@ async function handleComponent(interaction) {
 
         if (interaction.customId === "team_select_a") {
             const [teamName, teamId] = interaction.values[0].split("|");
-
-            session.teamA = {
-                name: teamName,
-                id: teamId
-            };
-
+            session.teamA = { name: teamName, id: teamId };
             await interaction.deferUpdate();
-
             return interaction.editReply({
                 embeds: [buildSetupEmbed(session)],
                 components: buildSetupComponents(session)
@@ -64,14 +58,8 @@ async function handleComponent(interaction) {
 
         if (interaction.customId === "team_select_b") {
             const [teamName, teamId] = interaction.values[0].split("|");
-
-            session.teamB = {
-                name: teamName,
-                id: teamId
-            };
-
+            session.teamB = { name: teamName, id: teamId };
             await interaction.deferUpdate();
-
             return interaction.editReply({
                 embeds: [buildSetupEmbed(session)],
                 components: buildSetupComponents(session)
@@ -80,9 +68,7 @@ async function handleComponent(interaction) {
 
         if (interaction.customId === "series_length_select") {
             session.seriesLength = Number(interaction.values[0]);
-
             await interaction.deferUpdate();
-
             return interaction.editReply({
                 embeds: [buildSetupEmbed(session)],
                 components: buildSetupComponents(session)
@@ -137,44 +123,48 @@ async function handleComponent(interaction) {
                 session.phase = "picks";
             }
 
-            // Draft complete — send the graphic
+            // Draft complete
             if (session.phase === "complete") {
-                await interaction.deferUpdate();
-
                 const file = await buildDraftGraphic(session);
-
                 const embed = buildDraftEmbed(session)
                     .setDescription("✅ Draft complete.")
                     .setImage("attachment://series.png");
 
-                return interaction.editReply({
-                    content: null,
+                await interaction.message.delete();
+
+                const channel = interaction.guild.channels.cache.get(session.channelId);
+                await channel.send({
                     embeds: [embed],
                     files: [file],
                     components: []
                 });
+
+                return;
             }
 
-            // Draft still in progress — ping next picker
+            // Draft still in progress — delete and resend with ping
             const picker = getCurrentPicker(session);
             const pingId = picker === "A" ? session.teamA.id : session.teamB.id;
 
             const file = await buildDraftGraphic(session);
             const embed = buildDraftEmbed(session).setImage("attachment://series.png");
 
-            // Delete old message and send a new one
+            const oldMessageId = interaction.message.id;
             await interaction.message.delete();
 
-            const newMessage = await interaction.channel.send({
-                content: `<@${pingId}>`,
+            const channel = interaction.guild.channels.cache.get(session.channelId);
+            const newMessage = await channel.send({
+                content: `<@${pingId}>'s turn.`,
                 embeds: [embed],
                 files: [file],
                 components: buildDraftComponents(session)
             });
 
-            // Update session to track new message ID
-            matchSessions.delete(interaction.message.id);
-            matchSessions.set(newMessage.id, session);;
+            // Update session key to new message ID
+            matchSessions.delete(oldMessageId);
+            matchSessions.set(newMessage.id, session);
+
+            return;
         }
     }
 
@@ -188,26 +178,69 @@ async function handleComponent(interaction) {
                 });
             }
 
+            // Create the private match channel
+            const guild = interaction.guild;
+            const category = guild.channels.cache.find(
+                c => c.name === "Pending Matches" && c.type === 4
+            );
+
+            const channel = await guild.channels.create({
+                name: `${session.teamA.name.toLowerCase()}-v-${session.teamB.name.toLowerCase()}`,
+                type: 0,
+                parent: category?.id ?? null,
+                permissionOverwrites: [
+                    {
+                        id: guild.roles.everyone,
+                        deny: ["ViewChannel"]
+                    },
+                    {
+                        id: session.adminId,
+                        allow: ["ViewChannel", "SendMessages"]
+                    },
+                    {
+                        id: session.teamA.id,
+                        allow: ["ViewChannel", "SendMessages"]
+                    },
+                    {
+                        id: session.teamB.id,
+                        allow: ["ViewChannel", "SendMessages"]
+                    }
+                ]
+            });
+
+            session.channelId = channel.id;
             session.phase = "initial_bans";
             session.bans = [];
             session.picks = [];
             session.extraMapBans = [];
 
-            // Ping first picker (Team A)
             const pingId = session.teamA.id;
 
-            await interaction.deferUpdate();
-
             const file = await buildDraftGraphic(session);
+            const embed = buildDraftEmbed(session).setImage("attachment://series.png");
 
-            const embed = buildDraftEmbed(session)
-                .setImage("attachment://series.png");
+            // Send draft into the new channel
+            const draftMessage = await channel.send({
+                content: `<@${session.teamA.id}> <@${session.teamB.id}>`
+            });
 
-            return interaction.editReply({
-                content: `<@${pingId}>`,
+            const newMessage = await channel.send({
+                content: `<@${pingId}> gets the first ban.`,
                 embeds: [embed],
                 files: [file],
                 components: buildDraftComponents(session)
+            });
+
+            // Update session key to new message ID
+            matchSessions.delete(interaction.message.id);
+            matchSessions.set(draftMessage.id, session);
+
+            // Update original setup message to confirm
+            await interaction.deferUpdate();
+            return interaction.editReply({
+                content: `✅ Match created in ${channel}`,
+                embeds: [],
+                components: []
             });
         }
     }
