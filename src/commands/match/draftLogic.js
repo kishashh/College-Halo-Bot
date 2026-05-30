@@ -183,27 +183,27 @@ function getDraftPrompt(session) {
     if (session.phase === "initial_bans") {
 
         return session.bans.length === 0
-            ? "Team A bans 1 mode/map combo"
-            : "Team B bans 1 mode/map combo";
+            ? `${session.teamA.name} bans 1 mode/map combo`
+            : `${session.teamB.name} bans 1 mode/map combo`;
     }
 
     /*
         Game 7 map ban prompt.
     */
     if (session.phase === "extra_g7_ban") {
-        return "Team B bans 1 map before Game 7";
+        return `${session.teamB.name} bans 1 map before Game 7`;
     }
 
     /*
         Normal pick prompt.
     */
     if (session.phase === "picks") {
-
         const rules = SERIES_RULES[session.seriesLength];
-
         const gameIndex = session.picks.length;
+        const picker = rules.pickOrder[gameIndex];
+        const team = picker === "A" ? session.teamA : session.teamB;
 
-        return `Team ${rules.pickOrder[gameIndex]} picks Game ${gameIndex + 1} ${rules.slots[gameIndex]}`;
+        return `${team.name} picks Game ${gameIndex + 1} ${rules.slots[gameIndex]}`;
     }
 
     /*
