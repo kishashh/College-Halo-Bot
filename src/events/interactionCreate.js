@@ -35,7 +35,8 @@ module.exports = (client) => {
 
             if (
                 interaction.isStringSelectMenu() ||
-                interaction.isButton()
+                interaction.isButton() ||
+                interaction.isModalSubmit()
             ) {
                 return match.handleComponent(interaction);
             }
