@@ -10,6 +10,9 @@ const {
     buildSetupComponents,
     buildScheduleComponents,
     buildScheduleResponseComponents,
+    buildDateSelectComponents,
+    buildTimeSelectComponents,
+    buildTimezoneSelectComponents,
     buildDraftComponents
 } = require('./components');
 
@@ -24,9 +27,6 @@ const {
 } = require('./draftLogic');
 
 const {
-    ModalBuilder,
-    TextInputBuilder,
-    TextInputStyle,
     ActionRowBuilder,
     EmbedBuilder
 } = require('discord.js');
@@ -68,61 +68,149 @@ async function postSchedule(session) {
     return await res.json();
 }
 
+function getTimeZoneOffsetMs(date, timeZone) {
+    const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone,
+        hour12: false,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+    }).formatToParts(date);
+
+    const filled = {};
+    for (const part of parts) {
+        filled[part.type] = part.value;
+    }
+
+    const asUTC = Date.UTC(
+        Number(filled.year),
+        Number(filled.month) - 1,
+        Number(filled.day),
+        Number(filled.hour),
+        Number(filled.minute),
+        Number(filled.second)
+    );
+
+    return asUTC - date.getTime();
+}
+
+function parseTimestamp(dateStr, timeStr, timeZone) {
+    let [year, month, day] = dateStr.split("-").map(Number);
+    let [hours, minutes] = timeStr.split(":").map(Number);
+
+    // Handle midnight option
+    if (hours === 24) {
+        hours = 0;
+        const d = new Date(Date.UTC(year, month - 1, day));
+        d.setUTCDate(d.getUTCDate() + 1);
+
+        year = d.getUTCFullYear();
+        month = d.getUTCMonth() + 1;
+        day = d.getUTCDate();
+    }
+
+    // First guess: pretend the selected time is UTC
+    const guessedUTC = new Date(Date.UTC(year, month - 1, day, hours, minutes));
+
+    // Find timezone offset for that date/time
+    const offsetMs = getTimeZoneOffsetMs(guessedUTC, timeZone);
+
+    // Convert local timezone time into real UTC
+    const realUTC = guessedUTC.getTime() - offsetMs;
+
+    return Math.floor(realUTC / 1000);
+}
+
 async function handleComponent(interaction) {
 
-    // ── Modal: propose time ───────────────────────────────────────────────────
-    if (interaction.isModalSubmit() && interaction.customId === "propose_time_modal") {
+    // ── Button / Select interactions ──────────────────────────────────────────
+    const session = matchSessions.get(interaction.message?.id)
+        ?? [...matchSessions.values()].find(s => s.channelId === interaction.channelId);
 
-        const session = [...matchSessions.values()].find(
-            s => s.channelId === interaction.channelId
-        );
+    if (!session) return;
 
-        if (!session) return;
+    // ── Propose time button → show date picker ────────────────────────────────
+    if (interaction.isButton() && interaction.customId === "propose_time") {
 
-        const dateInput = interaction.fields.getTextInputValue("match_date").trim();
-        const timeInput = interaction.fields.getTextInputValue("match_time").trim();
-        const tzInput   = interaction.fields.getTextInputValue("match_timezone").toUpperCase().trim();
+        const isPlayer =
+            interaction.user.id === session.teamA.id ||
+            interaction.user.id === session.teamB.id;
 
-        let timestamp;
-        try {
-            const timeRegex = /^(\d{1,2}):(\d{2})\s*(am|pm)$/i;
-            const timeMatch = timeInput.match(timeRegex);
-            if (!timeMatch) throw new Error("Invalid time");
-
-            let hours = parseInt(timeMatch[1]);
-            const minutes = parseInt(timeMatch[2]);
-            const meridiem = timeMatch[3].toLowerCase();
-
-            if (meridiem === "pm" && hours !== 12) hours += 12;
-            if (meridiem === "am" && hours === 12) hours = 0;
-
-            const dateParts = dateInput.split("/");
-            if (dateParts.length !== 3) throw new Error("Invalid date");
-
-            const month = parseInt(dateParts[0]) - 1;
-            const day   = parseInt(dateParts[1]);
-            const year  = parseInt(dateParts[2]);
-
-            const tzOffsets = {
-                EST: -5, EDT: -4,
-                CST: -6, CDT: -5,
-                MST: -7, MDT: -6,
-                PST: -8, PDT: -7,
-                UTC: 0,  GMT: 0
-            };
-
-            const offset = tzOffsets[tzInput];
-            if (offset === undefined) throw new Error("Unknown timezone");
-
-            const utcMs = Date.UTC(year, month, day, hours - offset, minutes);
-            timestamp = Math.floor(utcMs / 1000);
-
-        } catch (e) {
+        if (!isPlayer) {
             return interaction.reply({
-                content: "❌ Couldn't parse that date/time. Use format: date `5/23/2026`, time `5:30pm`, timezone `EST`",
+                content: "❌ Only the two players can propose a time.",
                 flags: 64
             });
         }
+
+        const embed = new EmbedBuilder()
+            .setTitle("📅 Propose Match Time")
+            .setDescription("**Step 1 of 3** — Select a date")
+            .setColor(0x00EEEE);
+
+        return interaction.reply({
+            embeds: [embed],
+            components: buildDateSelectComponents(),
+            flags: 64
+        });
+    }
+
+    // ── Date selected → show time picker ─────────────────────────────────────
+    if (interaction.isStringSelectMenu() && interaction.customId === "schedule_date_select") {
+
+        const dateValue = interaction.values[0]; // e.g. "2026-06-07"
+
+        const embed = new EmbedBuilder()
+            .setTitle("📅 Propose Match Time")
+            .setDescription(`**Step 2 of 3** — Select a time\nDate: **${dateValue}**`)
+            .setColor(0x00EEEE);
+
+        await interaction.update({
+            embeds: [embed],
+            components: buildTimeSelectComponents(dateValue)
+        });
+
+        return;
+    }
+
+    // ── Time selected → show timezone picker ──────────────────────────────────
+    if (
+        interaction.isStringSelectMenu() &&
+        ["schedule_time_select_early", "schedule_time_select_late"].includes(interaction.customId)
+    ) {
+
+        const dateTimeValue = interaction.values[0]; // e.g. "2026-06-07|19:00"
+        const [dateStr, timeStr] = dateTimeValue.split("|");
+
+        // Format time for display
+        const [h, m] = timeStr.split(":").map(Number);
+        const hour12 = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+        const ampm = h >= 12 ? "pm" : "am";
+        const timeDisplay = `${hour12}:${String(m).padStart(2,'0')}${ampm}`;
+
+        const embed = new EmbedBuilder()
+            .setTitle("📅 Propose Match Time")
+            .setDescription(`**Step 3 of 3** — Select your timezone\nDate: **${dateStr}** at **${timeDisplay}**`)
+            .setColor(0x00EEEE);
+
+        await interaction.update({
+            embeds: [embed],
+            components: buildTimezoneSelectComponents(dateTimeValue)
+        });
+
+        return;
+    }
+
+    // ── Timezone selected → confirm proposal ──────────────────────────────────
+    if (interaction.isStringSelectMenu() && interaction.customId === "schedule_tz_select") {
+
+        const fullValue = interaction.values[0]; // e.g. "2026-06-07|19:00|EST"
+        const [dateStr, timeStr, tz] = fullValue.split("|");
+
+        const timestamp = parseTimestamp(dateStr, timeStr, tz);
 
         // Delete previous proposal if exists
         if (session.proposalMessageId) {
@@ -149,65 +237,21 @@ async function handleComponent(interaction) {
             .setColor(0x00EEEE)
             .setFooter({ text: "Discord automatically shows this in your local timezone." });
 
-        const proposalMsg = await interaction.reply({
+        // Update the ephemeral picker to confirm
+        await interaction.update({
+            embeds: [{ title: "✅ Time proposed!", description: `<t:${timestamp}:F>`, color: 0x00FF88 }],
+            components: []
+        });
+
+        // Post the proposal publicly in the channel
+        const channel = interaction.guild.channels.cache.get(session.channelId);
+        const proposalMsg = await channel.send({
             embeds: [embed],
-            components: buildScheduleResponseComponents(),
-            fetchReply: true
+            components: buildScheduleResponseComponents()
         });
 
         session.proposalMessageId = proposalMsg.id;
         return;
-    }
-
-    // ── Button / Select interactions ──────────────────────────────────────────
-    const session = matchSessions.get(interaction.message?.id)
-        ?? [...matchSessions.values()].find(s => s.channelId === interaction.channelId);
-
-    if (!session) return;
-
-    // ── Propose time button → open modal ─────────────────────────────────────
-    if (interaction.isButton() && interaction.customId === "propose_time") {
-
-        const isPlayer =
-            interaction.user.id === session.teamA.id ||
-            interaction.user.id === session.teamB.id;
-
-        if (!isPlayer) {
-            return interaction.reply({
-                content: "❌ Only the two players can propose a time.",
-                flags: 64
-            });
-        }
-
-        const modal = new ModalBuilder()
-            .setCustomId("propose_time_modal")
-            .setTitle("Propose Match Time");
-
-        const dateInput = new TextInputBuilder()
-            .setCustomId("match_date")
-            .setLabel("Date (e.g. 5/23/2026)")
-            .setStyle(TextInputStyle.Short)
-            .setRequired(true);
-
-        const timeInput = new TextInputBuilder()
-            .setCustomId("match_time")
-            .setLabel("Time (e.g. 5:30pm)")
-            .setStyle(TextInputStyle.Short)
-            .setRequired(true);
-
-        const tzInput = new TextInputBuilder()
-            .setCustomId("match_timezone")
-            .setLabel("Timezone (EST, CST, MST, PST, UTC)")
-            .setStyle(TextInputStyle.Short)
-            .setRequired(true);
-
-        modal.addComponents(
-            new ActionRowBuilder().addComponents(dateInput),
-            new ActionRowBuilder().addComponents(timeInput),
-            new ActionRowBuilder().addComponents(tzInput)
-        );
-
-        return interaction.showModal(modal);
     }
 
     // ── Accept time button → start draft ─────────────────────────────────────
@@ -433,7 +477,7 @@ async function handleComponent(interaction) {
         }
     }
 
-    // ── Submit match button → create channel directly ─────────────────────────
+    // ── Submit match button → create channel ─────────────────────────────────
     if (interaction.isButton() && interaction.customId === "submit_match") {
 
         if (interaction.user.id !== session.adminId) {
