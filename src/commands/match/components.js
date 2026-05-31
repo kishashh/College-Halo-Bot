@@ -16,6 +16,15 @@ const teamList = require('../../data/teams');
 
 function buildSetupComponents(session) {
 
+    const matchTypeSelect = new StringSelectMenuBuilder()
+        .setCustomId("match_type_select")
+        .setPlaceholder("Select Match Type")
+        .addOptions(
+            { label: "Regular Season", value: "Regular", default: session.matchType === "Regular" },
+            { label: "Playoff",        value: "Playoff", default: session.matchType === "Playoff" },
+            { label: "Scrimmage",      value: "Scrimmage", default: session.matchType === "Scrimmage" }
+        );
+
     const teamSelectA = new StringSelectMenuBuilder()
         .setCustomId("team_select_a")
         .setPlaceholder("Select HIGHER SEED (Team A)")
@@ -51,6 +60,7 @@ function buildSetupComponents(session) {
         .setDisabled(!(session.teamA && session.teamB && session.seriesLength));
 
     return [
+        new ActionRowBuilder().addComponents(matchTypeSelect),
         new ActionRowBuilder().addComponents(teamSelectA),
         new ActionRowBuilder().addComponents(teamSelectB),
         new ActionRowBuilder().addComponents(seriesSelect),

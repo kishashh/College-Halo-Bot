@@ -31,9 +31,46 @@ const {
     EmbedBuilder
 } = require('discord.js');
 
+const API_URL = "https://halo-league-stats-production.up.railway.app";
+const API_KEY = "9af1aae3c75ca04f2f841f36c3c9db95a145bd8656debad0fcea5a7ee7b7049d";
+
+async function postSchedule(session) {
+    const mapsAndModes = session.picks.map(pick => ({
+        map:  pick.map,
+        mode: pick.mode
+    }));
+
+    const scheduledDate = new Date(session.proposedTime.timestamp * 1000).toISOString();
+
+    const payload = {
+        type:            session.matchType,
+        team_a:          session.teamA.name,
+        team_b:          session.teamB.name,
+        anchor_gamertag: "",
+        scheduled_date:  scheduledDate,
+        maps_and_modes:  mapsAndModes
+    };
+
+    const res = await fetch(`${API_URL}/api/schedule`, {
+        method:  "POST",
+        headers: {
+            "Content-Type":  "application/json",
+            "Authorization": `Bearer ${API_KEY}`
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? `API error ${res.status}`);
+    }
+
+    return await res.json();
+}
+
 async function handleComponent(interaction) {
 
-    // ── Modal submit (propose time) ───────────────────────────────────────────
+    // ── Modal: propose time ───────────────────────────────────────────────────
     if (interaction.isModalSubmit() && interaction.customId === "propose_time_modal") {
 
         const session = [...matchSessions.values()].find(
@@ -87,7 +124,7 @@ async function handleComponent(interaction) {
             });
         }
 
-        // Delete previous proposal message if exists
+        // Delete previous proposal if exists
         if (session.proposalMessageId) {
             try {
                 const chan = interaction.guild.channels.cache.get(session.channelId);
@@ -119,7 +156,6 @@ async function handleComponent(interaction) {
         });
 
         session.proposalMessageId = proposalMsg.id;
-
         return;
     }
 
@@ -249,7 +285,7 @@ async function handleComponent(interaction) {
     if (interaction.isStringSelectMenu()) {
 
         if (
-            ["team_select_a", "team_select_b", "series_length_select"].includes(interaction.customId)
+            ["team_select_a", "team_select_b", "series_length_select", "match_type_select"].includes(interaction.customId)
         ) {
             if (interaction.user.id !== session.adminId) {
                 return interaction.reply({
@@ -257,6 +293,15 @@ async function handleComponent(interaction) {
                     flags: 64
                 });
             }
+        }
+
+        if (interaction.customId === "match_type_select") {
+            session.matchType = interaction.values[0];
+            await interaction.deferUpdate();
+            return interaction.editReply({
+                embeds: [buildSetupEmbed(session)],
+                components: buildSetupComponents(session)
+            });
         }
 
         if (interaction.customId === "team_select_a") {
@@ -333,7 +378,7 @@ async function handleComponent(interaction) {
                 session.phase = "picks";
             }
 
-            // Draft complete
+            // Draft complete — POST to API
             if (session.phase === "complete") {
                 const file = await buildDraftGraphic(session);
                 const embed = buildDraftEmbed(session)
@@ -348,6 +393,17 @@ async function handleComponent(interaction) {
                     files: [file],
                     components: []
                 });
+
+                try {
+                    await postSchedule(session);
+                    await channel.send({
+                        content: "✅ Match successfully scheduled in the league system."
+                    });
+                } catch (err) {
+                    await channel.send({
+                        content: `⚠️ Draft complete but failed to submit to league system: ${err.message}`
+                    });
+                }
 
                 return;
             }
@@ -364,7 +420,7 @@ async function handleComponent(interaction) {
 
             const channel = interaction.guild.channels.cache.get(session.channelId);
             const newMessage = await channel.send({
-                content: `<@${pingId}>'s turn to ${session.phase === "initial_bans" ? "ban" : "pick"}!`,
+                content: `<@${pingId}>`,
                 embeds: [embed],
                 files: [file],
                 components: buildDraftComponents(session)
@@ -377,6 +433,7 @@ async function handleComponent(interaction) {
         }
     }
 
+    // ── Submit match button → create channel directly ─────────────────────────
     if (interaction.isButton() && interaction.customId === "submit_match") {
 
         if (interaction.user.id !== session.adminId) {
@@ -405,12 +462,18 @@ async function handleComponent(interaction) {
 
         session.channelId = channel.id;
 
+        const matchTypeLabel = {
+            regular:   "Regular Season",
+            playoff:   "Playoff",
+            scrimmage: "Scrimmage"
+        }[session.matchType] ?? session.matchType;
+
         const scheduleEmbed = new EmbedBuilder()
             .setTitle(`🎮 ${session.teamA.name} vs ${session.teamB.name}`)
             .setDescription(
-                `**BO${session.seriesLength} Match**\n\n` +
-                `Use this channel to communicate about the match,\n` +
-                `then propose a match time using the button below.`
+                `**BO${session.seriesLength} ${matchTypeLabel} Match**\n\n` +
+                `Use the button below to propose a match time.\n` +
+                `The other team can accept or counter-propose.`
             )
             .setColor(0x00EEEE);
 
