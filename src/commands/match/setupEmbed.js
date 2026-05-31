@@ -10,13 +10,21 @@ function buildSetupEmbed(session) {
                 "",
                 "⚠️ Team A is automatically the higher seed.",
                 "",
-                "1️⃣ Select Team A",
-                "2️⃣ Select Team B",
-                "3️⃣ Select BO5 or BO7",
-                "4️⃣ Press Submit Match"
+                "1️⃣ Select the Match Type",
+                "2️⃣ Select Team A",
+                "3️⃣ Select Team B",
+                "4️⃣ Select BO5 or BO7",
+                "5️⃣ Press Submit Match"
             ].join("\n")
         )
         .addFields(
+            {
+                name: "Match Type",
+                value: session.matchType
+                    ? session.matchType
+                    : "Not Selected",
+                inline: true
+            },
             {
                 name: "Team A",
                 value: session.teamA
