@@ -364,7 +364,7 @@ async function handleComponent(interaction) {
 
             const channel = interaction.guild.channels.cache.get(session.channelId);
             const newMessage = await channel.send({
-                content: `<@${pingId}>`,
+                content: `<@${pingId}>'s turn to ${session.phase === "initial_bans" ? "ban" : "pick"}!`,
                 embeds: [embed],
                 files: [file],
                 components: buildDraftComponents(session)
@@ -409,8 +409,8 @@ async function handleComponent(interaction) {
             .setTitle(`🎮 ${session.teamA.name} vs ${session.teamB.name}`)
             .setDescription(
                 `**BO${session.seriesLength} Match**\n\n` +
-                `Use the button below to propose a match time.\n` +
-                `The other team can accept or counter-propose.`
+                `Use this channel to communicate about the match,\n` +
+                `then propose a match time using the button below.`
             )
             .setColor(0x00EEEE);
 

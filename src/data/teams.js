@@ -31,7 +31,7 @@ const teamList = [
     // },
     {
         label: "OU",
-        value: "OU|280175942159040514", // Kish
+        value: "OU|389168023228907521", // Ciz
         color: "#841617"
     },
     // {
@@ -59,11 +59,11 @@ const teamList = [
     //     value: "UIUC|", // 
     //     color: "#13284B"
     // },
-    // {
-    //     label: "UNA",
-    //     value: "UNA|", //
-    //     color: "#46166B"
-    // },
+    {
+        label: "UNA",
+        value: "UNA|280175942159040514", //Kish
+        color: "#46166B"
+    },
     // {
     //     label: "UNM",
     //     value: "UNM|", //
