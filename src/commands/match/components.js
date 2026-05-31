@@ -16,69 +16,39 @@ const teamList = require('../../data/teams');
 
 function buildSetupComponents(session) {
 
-    /*
-        Team A selector
-    */
     const teamSelectA = new StringSelectMenuBuilder()
         .setCustomId("team_select_a")
         .setPlaceholder("Select HIGHER SEED (Team A)")
         .addOptions(
             teamList.map(team => ({
                 ...team,
-                default:
-                    session.teamA?.id ===
-                    team.value.split("|")[1]
+                default: session.teamA?.id === team.value.split("|")[1]
             }))
         );
 
-    /*
-        Team B selector
-    */
     const teamSelectB = new StringSelectMenuBuilder()
         .setCustomId("team_select_b")
         .setPlaceholder("Select LOWER SEED (Team B)")
         .addOptions(
             teamList.map(team => ({
                 ...team,
-                default:
-                    session.teamB?.id ===
-                    team.value.split("|")[1]
+                default: session.teamB?.id === team.value.split("|")[1]
             }))
         );
 
-    /*
-        Series length selector
-    */
     const seriesSelect = new StringSelectMenuBuilder()
         .setCustomId("series_length_select")
         .setPlaceholder("Select series length")
         .addOptions(
-            {
-                label: "BO5",
-                value: "5",
-                default: session.seriesLength === 5
-            },
-            {
-                label: "BO7",
-                value: "7",
-                default: session.seriesLength === 7
-            }
+            { label: "BO5", value: "5", default: session.seriesLength === 5 },
+            { label: "BO7", value: "7", default: session.seriesLength === 7 }
         );
 
-    /*
-        Submit button
-    */
     const submitButton = new ButtonBuilder()
         .setCustomId("submit_match")
         .setLabel("Submit Match")
         .setStyle(ButtonStyle.Success)
-        .setDisabled(
-            !(
-                session.teamA &&
-                session.teamB &&
-                session.seriesLength
-            )
-        );
+        .setDisabled(!(session.teamA && session.teamB && session.seriesLength));
 
     return [
         new ActionRowBuilder().addComponents(teamSelectA),
@@ -88,11 +58,36 @@ function buildSetupComponents(session) {
     ];
 }
 
+function buildScheduleComponents() {
+    const proposeButton = new ButtonBuilder()
+        .setCustomId("propose_time")
+        .setLabel("📅 Propose Time")
+        .setStyle(ButtonStyle.Primary);
+
+    return [
+        new ActionRowBuilder().addComponents(proposeButton)
+    ];
+}
+
+function buildScheduleResponseComponents() {
+    const acceptButton = new ButtonBuilder()
+        .setCustomId("accept_time")
+        .setLabel("✅ Accept")
+        .setStyle(ButtonStyle.Success);
+
+    const counterButton = new ButtonBuilder()
+        .setCustomId("propose_time")
+        .setLabel("📅 Counter-Propose")
+        .setStyle(ButtonStyle.Secondary);
+
+    return [
+        new ActionRowBuilder().addComponents(acceptButton, counterButton)
+    ];
+}
+
 function buildDraftComponents(session) {
 
-    if (session.phase === "complete") {
-        return [];
-    }
+    if (session.phase === "complete") return [];
 
     let options = [];
 
@@ -117,21 +112,19 @@ function buildDraftComponents(session) {
         }));
     }
 
-    if (!options.length) {
-        return [];
-    }
+    if (!options.length) return [];
 
     const select = new StringSelectMenuBuilder()
         .setCustomId("draft_select")
         .setPlaceholder(getDraftPrompt(session))
         .addOptions(options.slice(0, 25));
 
-    return [
-        new ActionRowBuilder().addComponents(select)
-    ];
+    return [new ActionRowBuilder().addComponents(select)];
 }
 
 module.exports = {
     buildSetupComponents,
+    buildScheduleComponents,
+    buildScheduleResponseComponents,
     buildDraftComponents
 };

@@ -18,13 +18,13 @@ async function createMatch(interaction) {
         teamB: null
     };
 
-    const reply = await interaction.reply({
+    const { reply, resource } = await interaction.reply({
         embeds: [buildSetupEmbed(session)],
         components: buildSetupComponents(session),
-        fetchReply: true
+        withResponse: true
     });
 
-    matchSessions.set(reply.id, session);
+    matchSessions.set(resource.message.id, session);
 }
 
 module.exports = createMatch;
