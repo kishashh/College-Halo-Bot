@@ -31,7 +31,7 @@ const teamList = [
     // },
     {
         label: "OU",
-        value: "OU|389168023228907521", // Ciz
+        value: "OU|215316996118544384", // Assassin
         color: "#841617"
     },
     // {
