@@ -463,8 +463,18 @@ async function handleComponent(interaction) {
             await interaction.message.delete();
 
             const channel = interaction.guild.channels.cache.get(session.channelId);
+            const gameNumber = session.picks.length + 1;
+
+            const isBanPhase =
+                session.phase === "initial_bans" ||
+                session.phase === "extra_g7_ban";
+
+            const actionText = isBanPhase
+                ? `it's your turn to ban`
+                : `it's your turn to pick Game ${gameNumber}`;
+
             const newMessage = await channel.send({
-                content: `<@${pingId}>`,
+                content: `<@${pingId}> ${actionText}`,
                 embeds: [embed],
                 files: [file],
                 components: buildDraftComponents(session)
