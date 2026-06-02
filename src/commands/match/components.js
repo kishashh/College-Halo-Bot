@@ -12,7 +12,7 @@ const {
     getDraftPrompt
 } = require('./draftLogic');
 
-const teamList = require('../../data/teams');
+const { getTeams } = require('../../teamLoader');
 
 function buildSetupComponents(session) {
 
@@ -29,7 +29,7 @@ function buildSetupComponents(session) {
         .setCustomId("team_select_a")
         .setPlaceholder("Select HIGHER SEED (Team A)")
         .addOptions(
-            teamList.map(team => ({
+            getTeams().map(team => ({
                 ...team,
                 default: session.teamA?.id === team.value.split("|")[1]
             }))
@@ -39,7 +39,7 @@ function buildSetupComponents(session) {
         .setCustomId("team_select_b")
         .setPlaceholder("Select LOWER SEED (Team B)")
         .addOptions(
-            teamList.map(team => ({
+            getTeams().map(team => ({
                 ...team,
                 default: session.teamB?.id === team.value.split("|")[1]
             }))
