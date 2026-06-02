@@ -1,14 +1,8 @@
 const { createCanvas, loadImage, GlobalFonts } = require("@napi-rs/canvas");
 const path = require("path");
 const fs = require("fs");
-const teamList = require('../../data/teams');
+const { getTeams } = require('../../teamLoader');
 
-const TEAM_COLORS = Object.fromEntries(
-    teamList.map(team => [
-        team.label,
-        team.color
-    ])
-);
 
 GlobalFonts.registerFromPath(path.join(__dirname, "../../../assets/fonts/Bold.ttf"), "CustomFont");
 GlobalFonts.registerFromPath(path.join(__dirname, "../../../assets/fonts/Regular.ttf"), "CustomFont");
@@ -118,6 +112,8 @@ function drawRedX(ctx, x, y, w, h) {
  */
 
 async function renderSeriesGraphic(data) {
+    const TEAM_COLORS = Object.fromEntries(getTeams().map(t => [t.label, t.color]));
+
     const {
         teamA, teamB,
         teamAColor = TEAM_COLORS[teamA],
