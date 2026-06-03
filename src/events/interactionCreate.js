@@ -3,6 +3,9 @@ const bo5 = require('../commands/bo5');
 const bo7 = require('../commands/bo7');
 const match = require('../commands/match');
 const test = require('../commands/test');
+const createteam = require('../commands/createteam');
+const deleteteam = require('../commands/deleteteam');
+const editteam   = require('../commands/editteam');
 
 module.exports = (client) => {
 
@@ -30,6 +33,15 @@ module.exports = (client) => {
 
                     case 'test':
                         return test.execute(interaction);
+
+                    case 'createteam':
+                        return createteam.execute(interaction);
+
+                    case 'deleteteam':
+                        return deleteteam.execute(interaction);
+                        
+                    case 'editeams':
+                        return editteam.execute(interaction);
                 }
             }
 
@@ -38,6 +50,10 @@ module.exports = (client) => {
                 interaction.isButton() ||
                 interaction.isModalSubmit()
             ) {
+                if (await deleteteam.handleSelect(interaction)) return;
+                if (await editteam.handleSelect(interaction)) return;
+                if (await editteam.handleModal(interaction)) return;
+                if (await createteam.handleModal(interaction)) return;
                 return match.handleComponent(interaction);
             }
 

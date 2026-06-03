@@ -27,6 +27,18 @@ const commands = [
         .setName('test')
         .setDescription('Test the series graphic'),
 
+    new SlashCommandBuilder()
+        .setName('createteam')
+        .setDescription('Creates a new team'),
+
+    new SlashCommandBuilder()
+        .setName('deleteteam')
+        .setDescription('Deletes a team'),
+
+    new SlashCommandBuilder()
+        .setName('editeams')
+        .setDescription('Edits existing teams')
+
 ].map(command => command.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
