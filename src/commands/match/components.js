@@ -74,8 +74,17 @@ function buildScheduleComponents() {
         .setLabel("📅 Propose Time")
         .setStyle(ButtonStyle.Primary);
 
+    // 
+    // Admin button to skip scheduling and jump straight to draft (for testing purposes only)
+    //  
+
+    // const skipButton = new ButtonBuilder()
+    //     .setCustomId("skip_schedule")
+    //     .setLabel("⏩ Skip to Draft (Test)")
+    //     .setStyle(ButtonStyle.Danger);
+
     return [
-        new ActionRowBuilder().addComponents(proposeButton)
+        new ActionRowBuilder().addComponents(proposeButton, /*skipButton*/ )
     ];
 }
 

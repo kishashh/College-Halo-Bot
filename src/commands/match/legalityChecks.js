@@ -1,4 +1,5 @@
 const SERIES_RULES = require('../../data/seriesRules');
+const { OBJS, SLAYER } = require('../../data/maps');
 
 /*
     Checks if the current series already contains ANY repeated maps.
@@ -10,6 +11,37 @@ function hasMapRepeat(session) {
     );
 
     return new Set(maps).size !== maps.length;
+}
+
+/*
+    Counts how many alternative maps exist for game 6 (index 5) in a BO7.
+    Used to enforce the rule: if alternatives exist, game 6 cannot repeat game 5's map.
+*/
+function countAlternativeMapsForGame6(session, excludeMap) {
+
+    const usedObjModes = session.picks
+        .filter(pick => pick.type === "OBJ")
+        .map(pick => pick.mode);
+
+    const usedObjMaps = session.picks
+        .filter(pick => pick.type === "OBJ")
+        .map(pick => pick.map);
+
+    const availableObjModes = Object.keys(OBJS).filter(
+        mode => !usedObjModes.includes(mode)
+    );
+
+    const alternatives = new Set();
+
+    for (const mode of availableObjModes) {
+        for (const map of OBJS[mode]) {
+            if (map !== excludeMap && !usedObjMaps.includes(map)) {
+                alternatives.add(map);
+            }
+        }
+    }
+
+    return alternatives.size;
 }
 
 /*
@@ -160,18 +192,7 @@ function isLegalPick(session, combo, gameIndex) {
         - OBJ modes still cannot repeat
         - Slayer maps cannot repeat
         - Game 7 cannot equal Game 6 map
-
-        Examples:
-
-        VALID:
-        Game 2 Slayer - Recharge; Game 6 Strongholds - Recharge
-            OR
-        Game 4 CTF - Aquarius; Game 7 Slayer - Aquarius
-
-        INVALID:
-        Game 6 Oddball - Live Fire
-        Game 7 Slayer - Live Fire
-        KOTH twice in same series
+        - Game 6 cannot equal Game 5 map IF alternatives exist
     */
 
     if (
@@ -190,6 +211,23 @@ function isLegalPick(session, combo, gameIndex) {
         }
 
         /*
+            Game 6 cannot use same map as Game 5
+            UNLESS no alternative maps exist (forced repeat).
+        */
+        if (
+            gameIndex === 5 &&
+            combo.map === session.picks[4]?.map
+        ) {
+            const alternatives = countAlternativeMapsForGame6(session, combo.map);
+
+            if (alternatives > 0) {
+                return false;
+            }
+
+            // No alternatives exist — forced repeat is allowed
+        }
+
+        /*
             Slayer maps cannot repeat across Slayer games.
         */
         if (
@@ -198,7 +236,6 @@ function isLegalPick(session, combo, gameIndex) {
         ) {
             return false;
         }
-        
 
         /*
             If we reach here, combo is legal.
