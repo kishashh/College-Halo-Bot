@@ -6,9 +6,7 @@ const {
     buildSetupComponents
 } = require('./components');
 
-const {
-    matchSessions
-} = require('./sessionManager');
+const { matchSessions } = require('../../sessionManager');
 
 async function createMatch(interaction) {
 
