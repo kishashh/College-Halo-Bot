@@ -78,13 +78,13 @@ function buildScheduleComponents() {
     // Admin button to skip scheduling and jump straight to draft (for testing purposes only)
     //  
 
-    // const skipButton = new ButtonBuilder()
-    //     .setCustomId("skip_schedule")
-    //     .setLabel("⏩ Skip to Draft (Test)")
-    //     .setStyle(ButtonStyle.Danger);
+    const skipButton = new ButtonBuilder()
+        .setCustomId("skip_schedule")
+        .setLabel("⏩ Skip to Draft (Test)")
+        .setStyle(ButtonStyle.Danger);
 
     return [
-        new ActionRowBuilder().addComponents(proposeButton, /*skipButton*/ )
+        new ActionRowBuilder().addComponents(proposeButton, skipButton )
     ];
 }
 

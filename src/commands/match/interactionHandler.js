@@ -1,6 +1,4 @@
-const {
-    matchSessions
-} = require('./sessionManager');
+const { matchSessions } = require('../../sessionManager');
 
 const {
     buildSetupEmbed
@@ -491,29 +489,29 @@ async function handleComponent(interaction) {
     // Admin button to skip scheduling and jump straight to draft (for testing purposes only)
     //     
 
-    // if (interaction.isButton() && interaction.customId === "skip_schedule") {
-    //     session.proposedTime = { timestamp: Math.floor(Date.now() / 1000), proposedBy: interaction.user.id };
-    //     session.phase = "initial_bans";
-    //     session.bans = [];
-    //     session.picks = [];
-    //     session.extraMapBans = [];
+    if (interaction.isButton() && interaction.customId === "skip_schedule") {
+        session.proposedTime = { timestamp: Math.floor(Date.now() / 1000), proposedBy: interaction.user.id };
+        session.phase = "initial_bans";
+        session.bans = [];
+        session.picks = [];
+        session.extraMapBans = [];
 
-    //     const pingId = session.teamA.id;
-    //     const file = await buildDraftGraphic(session);
-    //     const embed = buildDraftEmbed(session).setImage("attachment://series.png");
+        const pingId = session.teamA.id;
+        const file = await buildDraftGraphic(session);
+        const embed = buildDraftEmbed(session).setImage("attachment://series.png");
 
-    //     const channel = interaction.guild.channels.cache.get(session.channelId);
-    //     const draftMessage = await channel.send({
-    //         content: `<@${pingId}> The draft is starting!`,
-    //         embeds: [embed],
-    //         files: [file],
-    //         components: buildDraftComponents(session)
-    //     });
+        const channel = interaction.guild.channels.cache.get(session.channelId);
+        const draftMessage = await channel.send({
+            content: `<@${pingId}> The draft is starting!`,
+            embeds: [embed],
+            files: [file],
+            components: buildDraftComponents(session)
+        });
 
-    //     matchSessions.set(draftMessage.id, session);
-    //     await interaction.update({ components: [] });
-    //     return;
-    // }
+        matchSessions.set(draftMessage.id, session);
+        await interaction.update({ components: [] });
+        return;
+    }
 
     // ── Submit match button → create channel ─────────────────────────────────
     if (interaction.isButton() && interaction.customId === "submit_match") {
