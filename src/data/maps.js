@@ -4,7 +4,9 @@ const OBJS = {
         "Empyrean",
         "Fortress",
         "Forbidden",
-        "Origin"
+        "Origin",
+        "Argyle",
+        "Catalyst"
     ],
 
     Oddball: [
@@ -18,7 +20,8 @@ const OBJS = {
     Strongholds: [
         "Live Fire",
         "Recharge",
-        "Lattice"
+        "Lattice",
+        "Streets"
     ],
 
     KOTH: [
@@ -26,7 +29,8 @@ const OBJS = {
         "Recharge",
         "Lattice",
         "Vacancy",
-        "Solitude"
+        "Solitude",
+        "Streets"
     ]
 };
 
