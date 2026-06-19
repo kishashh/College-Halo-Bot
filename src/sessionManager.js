@@ -40,9 +40,9 @@ async function restoreSessions() {
             matchSessions.set(messageId, data);
         }
 
-        console.log(`✅ Restored ${sessions.length} active session(s) from database`);
+        // console.log(`✅ Restored ${sessions.length} active session(s) from database`);
     } catch (err) {
-        console.error('Failed to restore sessions:', err);
+        // console.error('Failed to restore sessions:', err);
     }
 }
 

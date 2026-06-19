@@ -342,7 +342,7 @@ async function handleComponent(interaction) {
             await interaction.deferUpdate();
             return interaction.editReply({
                 embeds: [buildSetupEmbed(session)],
-                components: buildSetupComponents(session)
+                components: await buildSetupComponents(session)
             });
         }
 
@@ -352,7 +352,7 @@ async function handleComponent(interaction) {
             await interaction.deferUpdate();
             return interaction.editReply({
                 embeds: [buildSetupEmbed(session)],
-                components: buildSetupComponents(session)
+                components: await buildSetupComponents(session)
             });
         }
 
@@ -362,7 +362,7 @@ async function handleComponent(interaction) {
             await interaction.deferUpdate();
             return interaction.editReply({
                 embeds: [buildSetupEmbed(session)],
-                components: buildSetupComponents(session)
+                components: await buildSetupComponents(session)
             });
         }
 
@@ -371,7 +371,7 @@ async function handleComponent(interaction) {
             await interaction.deferUpdate();
             return interaction.editReply({
                 embeds: [buildSetupEmbed(session)],
-                components: buildSetupComponents(session)
+                components: await buildSetupComponents(session)
             });
         }
 

@@ -112,7 +112,7 @@ function drawRedX(ctx, x, y, w, h) {
  */
 
 async function renderSeriesGraphic(data) {
-    const TEAM_COLORS = Object.fromEntries(getTeams().map(t => [t.label, t.color]));
+    const TEAM_COLORS = Object.fromEntries((await getTeams()).map(t => [t.label, t.color]));
 
     const {
         teamA, teamB,
