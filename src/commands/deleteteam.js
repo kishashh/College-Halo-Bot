@@ -1,10 +1,12 @@
 const {
     ActionRowBuilder,
     StringSelectMenuBuilder,
+    ButtonBuilder,
+    ButtonStyle,
     EmbedBuilder
 } = require('discord.js');
 
-const { getTeams, saveTeams } = require('../teamLoader');
+const { getTeams, deleteTeam } = require('../teamLoader');
 
 async function execute(interaction) {
 
@@ -15,13 +17,10 @@ async function execute(interaction) {
         });
     }
 
-    const teams = getTeams();
+    const teams = await getTeams();
 
     if (!teams.length) {
-        return interaction.reply({
-            content: "❌ No teams found.",
-            flags: 64
-        });
+        return interaction.reply({ content: "❌ No teams found.", flags: 64 });
     }
 
     const select = new StringSelectMenuBuilder()
@@ -44,24 +43,57 @@ async function handleSelect(interaction) {
     if (!interaction.isStringSelectMenu() || interaction.customId !== "deleteteam_select") return false;
 
     const teamName = interaction.values[0];
-    const teams    = getTeams();
-    const filtered = teams.filter(t => t.label !== teamName);
 
-    if (filtered.length === teams.length) {
-        return interaction.reply({
-            content: `❌ Team **${teamName}** not found.`,
-            flags: 64
-        });
-    }
+    const confirmButton = new ButtonBuilder()
+        .setCustomId(`deleteteam_confirm|${teamName}`)
+        .setLabel(`Yes, delete ${teamName}`)
+        .setStyle(ButtonStyle.Danger);
 
-    saveTeams(filtered);
+    const cancelButton = new ButtonBuilder()
+        .setCustomId("deleteteam_cancel")
+        .setLabel("Cancel")
+        .setStyle(ButtonStyle.Secondary);
 
-    const embed = new EmbedBuilder()
-        .setTitle("🗑️ Team Deleted")
-        .setDescription(`**${teamName}** has been removed.`)
-        .setColor(0xff4444);
-
-    return interaction.update({ embeds: [embed], components: [] });
+    return interaction.update({
+        content: `⚠️ Are you sure you want to delete **${teamName}**? This cannot be undone.`,
+        components: [new ActionRowBuilder().addComponents(confirmButton, cancelButton)]
+    });
 }
 
-module.exports = { execute, handleSelect };
+async function handleButton(interaction) {
+
+    if (!interaction.isButton()) return false;
+
+    if (interaction.customId === "deleteteam_cancel") {
+        await interaction.update({
+            content: "❌ Deletion cancelled.",
+            components: []
+        });
+        return true;
+    }
+
+    if (interaction.customId.startsWith("deleteteam_confirm|")) {
+        const teamName = interaction.customId.split("|")[1];
+        const deleted  = await deleteTeam(teamName);
+
+        if (!deleted) {
+            await interaction.update({
+                content: `❌ Team **${teamName}** not found.`,
+                components: []
+            });
+            return true;
+        }
+
+        const embed = new EmbedBuilder()
+            .setTitle("🗑️ Team Deleted")
+            .setDescription(`**${teamName}** has been removed.`)
+            .setColor(0xff4444);
+
+        await interaction.update({ content: null, embeds: [embed], components: [] });
+        return true;
+    }
+
+    return false;
+}
+
+module.exports = { execute, handleSelect, handleButton };

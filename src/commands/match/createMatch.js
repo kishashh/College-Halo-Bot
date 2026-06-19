@@ -18,7 +18,7 @@ async function createMatch(interaction) {
 
     const { reply, resource } = await interaction.reply({
         embeds: [buildSetupEmbed(session)],
-        components: buildSetupComponents(session),
+        components: await buildSetupComponents(session),
         withResponse: true
     });
 

@@ -37,7 +37,11 @@ const commands = [
 
     new SlashCommandBuilder()
         .setName('editeams')
-        .setDescription('Edits existing teams')
+        .setDescription('Edits existing teams'),
+
+    new SlashCommandBuilder()
+        .setName('teams')
+        .setDescription('List all teams in the league'),
 
 ].map(command => command.toJSON());
 

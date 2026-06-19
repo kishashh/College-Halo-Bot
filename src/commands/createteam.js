@@ -6,11 +6,10 @@ const {
     EmbedBuilder
 } = require('discord.js');
 
-const { getTeams, saveTeams } = require('../teamLoader');
+const { getTeam, saveTeam } = require('../teamLoader');
 
 async function execute(interaction) {
 
-    // Only admins can create teams
     if (!interaction.member.permissions.has("Administrator")) {
         return interaction.reply({
             content: "❌ Only admins can create teams.",
@@ -30,13 +29,13 @@ async function execute(interaction) {
 
     const captainInput = new TextInputBuilder()
         .setCustomId("captain_id")
-        .setLabel("Captain Discord ID")
+        .setLabel("Captain Username (e.g. kishash)")
         .setStyle(TextInputStyle.Short)
         .setRequired(true);
 
     const colorInput = new TextInputBuilder()
         .setCustomId("team_color")
-        .setLabel("Team Color (hex, e.g. #841617)")
+        .setLabel("Team Color hex (e.g. 841617)")
         .setStyle(TextInputStyle.Short)
         .setRequired(true);
 
@@ -51,49 +50,66 @@ async function execute(interaction) {
 
 async function handleModal(interaction) {
 
-    if (!interaction.isModalSubmit() || interaction.customId !== "createteam_modal") return false;
+    if (interaction.type !== 5 || interaction.customId !== "createteam_modal") return false;
 
-    const name     = interaction.fields.getTextInputValue("team_name").trim();
-    const captainId = interaction.fields.getTextInputValue("captain_id").trim();
-    const color    = interaction.fields.getTextInputValue("team_color").trim();
+    await interaction.deferReply({ flags: 64 });
 
-    // Validate hex color
-    if (!/^[0-9A-Fa-f]{6}$/.test(color)) {
-        return interaction.reply({
-            content: "❌ Invalid hex color. Use format `RRGGBB`.",
-            flags: 64
-        });
+    try {
+        const name     = interaction.fields.getTextInputValue("team_name").trim();
+        const username = interaction.fields.getTextInputValue("captain_id").trim().toLowerCase();
+        let   color    = interaction.fields.getTextInputValue("team_color").trim().replace("#", "");
+
+        color = `#${color}`;
+        if (!/^#[0-9A-Fa-f]{6}$/.test(color)) {
+            return interaction.editReply({
+                content: "❌ Invalid hex color. Use 6 characters e.g. `841617`."
+            });
+        }
+
+        await interaction.guild.members.fetch();
+        const member = interaction.guild.members.cache.find(
+            m => m.user.username.toLowerCase() === username ||
+                 m.displayName.toLowerCase()   === username
+        );
+
+        if (!member) {
+            return interaction.editReply({
+                content: `❌ Couldn't find a member with username **${username}** in this server.`
+            });
+        }
+
+        const captainId = member.user.id;
+
+        const existing = await getTeam(name);
+        if (existing) {
+            return interaction.editReply({
+                content: `❌ A team named **${name}** already exists.`
+            });
+        }
+
+        const newTeam = {
+            label: name,
+            value: `${name}|${captainId}`,
+            color
+        };
+
+        await saveTeam(newTeam);
+
+        const embed = new EmbedBuilder()
+            .setTitle("✅ Team Created")
+            .addFields(
+                { name: "Team",    value: name,                                        inline: true },
+                { name: "Captain", value: `<@${captainId}> (${member.user.username})`, inline: true },
+                { name: "Color",   value: color,                                       inline: true }
+            )
+            .setColor(color);
+
+        return interaction.editReply({ embeds: [embed] });
+
+    } catch (e) {
+        console.error('createteam handleModal error:', e);
+        return interaction.editReply({ content: '❌ Error: ' + e.message });
     }
-
-    const teams = getTeams();
-
-    // Check for duplicate
-    if (teams.find(t => t.label.toLowerCase() === name.toLowerCase())) {
-        return interaction.reply({
-            content: `❌ A team named **${name}** already exists.`,
-            flags: 64
-        });
-    }
-
-    const newTeam = {
-        label: name,
-        value: `${name}|${captainId}`,
-        color: `#${color}`
-    };
-
-    teams.push(newTeam);
-    saveTeams(teams);
-
-    const embed = new EmbedBuilder()
-        .setTitle("✅ Team Created")
-        .addFields(
-            { name: "Team",    value: name,              inline: true },
-            { name: "Captain", value: `<@${captainId}>`, inline: true },
-            { name: "Color",   value: "#"+color,         inline: true }
-        )
-        .setColor(color);
-
-    return interaction.reply({ embeds: [embed] });
 }
 
 module.exports = { execute, handleModal };

@@ -6,7 +6,8 @@ const { restoreSessions } = require('./sessionManager');
 
 const client = new Client({
     intents: [
-        IntentsBitField.Flags.Guilds
+        IntentsBitField.Flags.Guilds,
+        IntentsBitField.Flags.GuildMembers
     ]
 });
 

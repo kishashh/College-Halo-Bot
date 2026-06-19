@@ -1,16 +1,32 @@
-const fs   = require('fs');
-const path = require('path');
+const { getDB } = require('./db');
 
-const TEAMS_PATH = process.env.TEAMS_PATH 
-    || path.join(__dirname, './data/teams.json');
-
-function getTeams() {
-    const raw = fs.readFileSync(TEAMS_PATH, 'utf-8');
-    return JSON.parse(raw);
+// ── Get all teams from MongoDB ─────────────────────────────────────────────
+async function getTeams() {
+    const db = await getDB();
+    return await db.collection('teams').find({}).toArray();
 }
 
-function saveTeams(teams) {
-    fs.writeFileSync(TEAMS_PATH, JSON.stringify(teams, null, 4), 'utf-8');
+// ── Add or update a single team ────────────────────────────────────────────
+async function saveTeam(team) {
+    const db = await getDB();
+    await db.collection('teams').replaceOne(
+        { label: team.label },
+        team,
+        { upsert: true }
+    );
 }
 
-module.exports = { getTeams, saveTeams, TEAMS_PATH };
+// ── Delete a team by label ─────────────────────────────────────────────────
+async function deleteTeam(label) {
+    const db = await getDB();
+    const result = await db.collection('teams').deleteOne({ label });
+    return result.deletedCount > 0;
+}
+
+// ── Find a single team by label ────────────────────────────────────────────
+async function getTeam(label) {
+    const db = await getDB();
+    return await db.collection('teams').findOne({ label });
+}
+
+module.exports = { getTeams, saveTeam, deleteTeam, getTeam };

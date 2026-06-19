@@ -24,6 +24,7 @@ The official Discord bot for the College Halo League. Manages match drafts, sche
 | `/createteam` | Add a new team to the league | Admin |
 | `/editteam` | Edit an existing team's name, captain, or color | Admin |
 | `/deleteteam` | Remove a team from the league | Admin |
+| `/teams` | Displays a list of all teams in the league  | Admin |
 | `/bo3` | Generate a random BO3 series graphic | Everyone |
 | `/bo5` | Generate a random BO5 series graphic | Everyone |
 | `/bo7` | Generate a random BO7 series graphic | Everyone |
@@ -97,7 +98,7 @@ assets/
 
 ## Team Data
 
-Teams are stored in `data/teams.json`. Each team has the following shape:
+Teams are stored in MongoDB. Each team has the following shape:
 
 ```json
 {
@@ -107,7 +108,7 @@ Teams are stored in `data/teams.json`. Each team has the following shape:
 }
 ```
 
-Teams can be managed at runtime using the `/createteam`, `/editteam`, and `/deleteteam` commands.
+Teams can be managed at runtime using the `/createteam`, `/editteam`, and `/deleteteam` commands. Full list of teams can be viewed using the `/teams` command.
 
 ---
 
@@ -117,7 +118,6 @@ Teams can be managed at runtime using the `/createteam`, `/editteam`, and `/dele
 
 - **Standings Command** — `/standings` pulls from the web app and displays a league table with wins, losses, and map differential
 - **Match Reminders** — Automatic pings 24 hours and 1 hour before a confirmed match time
-- **Session Persistence** — Store active draft sessions in MongoDB so drafts survive bot restarts
 - **Roster Command** — `/roster` displays a team's players, captain, and current record
 - **Upcoming Matches** — `/schedule` shows the next week of confirmed matches from the web app
 
@@ -136,5 +136,5 @@ Teams can be managed at runtime using the `/createteam`, `/editteam`, and `/dele
 - [Discord.js](https://discord.js.org/) v14
 - [@napi-rs/canvas](https://github.com/Brooooooklyn/canvas) — server-side image rendering
 - Node.js / Express
-- MongoDB Atlas (planned)
+- MongoDB Atlas
 - Railway (hosting)

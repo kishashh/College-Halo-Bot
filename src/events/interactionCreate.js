@@ -6,6 +6,7 @@ const test = require('../commands/test');
 const createteam = require('../commands/createteam');
 const deleteteam = require('../commands/deleteteam');
 const editteam   = require('../commands/editteam');
+const teams = require('../commands/teams');
 
 module.exports = (client) => {
 
@@ -42,6 +43,9 @@ module.exports = (client) => {
                         
                     case 'editeams':
                         return editteam.execute(interaction);
+                        
+                    case 'teams':
+                        return teams.execute(interaction);
                 }
             }
 
@@ -51,6 +55,7 @@ module.exports = (client) => {
                 interaction.isModalSubmit()
             ) {
                 if (await deleteteam.handleSelect(interaction)) return;
+                if (await deleteteam.handleButton(interaction)) return;
                 if (await editteam.handleSelect(interaction)) return;
                 if (await editteam.handleModal(interaction)) return;
                 if (await createteam.handleModal(interaction)) return;

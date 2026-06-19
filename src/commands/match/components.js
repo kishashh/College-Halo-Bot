@@ -14,7 +14,9 @@ const {
 
 const { getTeams } = require('../../teamLoader');
 
-function buildSetupComponents(session) {
+async function buildSetupComponents(session) {
+
+    const teams = await getTeams();
 
     const matchTypeSelect = new StringSelectMenuBuilder()
         .setCustomId("match_type_select")
@@ -29,8 +31,9 @@ function buildSetupComponents(session) {
         .setCustomId("team_select_a")
         .setPlaceholder("Select HIGHER SEED (Team A)")
         .addOptions(
-            getTeams().map(team => ({
-                ...team,
+            teams.map(team => ({
+                label: team.label,
+                value: team.value,
                 default: session.teamA?.id === team.value.split("|")[1]
             }))
         );
@@ -39,8 +42,9 @@ function buildSetupComponents(session) {
         .setCustomId("team_select_b")
         .setPlaceholder("Select LOWER SEED (Team B)")
         .addOptions(
-            getTeams().map(team => ({
-                ...team,
+            teams.map(team => ({
+                label: team.label,
+                value: team.value,
                 default: session.teamB?.id === team.value.split("|")[1]
             }))
         );

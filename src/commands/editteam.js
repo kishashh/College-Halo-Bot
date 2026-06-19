@@ -7,7 +7,7 @@ const {
     EmbedBuilder
 } = require('discord.js');
 
-const { getTeams, saveTeams } = require('../teamLoader');
+const { getTeams, getTeam, saveTeam, deleteTeam } = require('../teamLoader');
 
 async function execute(interaction) {
 
@@ -18,13 +18,10 @@ async function execute(interaction) {
         });
     }
 
-    const teams = getTeams();
+    const teams = await getTeams();
 
     if (!teams.length) {
-        return interaction.reply({
-            content: "❌ No teams found.",
-            flags: 64
-        });
+        return interaction.reply({ content: "❌ No teams found.", flags: 64 });
     }
 
     const select = new StringSelectMenuBuilder()
@@ -47,14 +44,20 @@ async function handleSelect(interaction) {
     if (!interaction.isStringSelectMenu() || interaction.customId !== "editteam_select") return false;
 
     const teamName = interaction.values[0];
-    const teams    = getTeams();
-    const team     = teams.find(t => t.label === teamName);
+    const team     = await getTeam(teamName);
 
     if (!team) {
         return interaction.reply({ content: `❌ Team **${teamName}** not found.`, flags: 64 });
     }
 
     const [, captainId] = team.value.split("|");
+
+    let captainDisplay = captainId ?? "";
+    try {
+        await interaction.guild.members.fetch(captainId);
+        const member = interaction.guild.members.cache.get(captainId);
+        if (member) captainDisplay = member.user.username;
+    } catch (_) {}
 
     const modal = new ModalBuilder()
         .setCustomId(`editteam_modal|${teamName}`)
@@ -69,16 +72,16 @@ async function handleSelect(interaction) {
 
     const captainInput = new TextInputBuilder()
         .setCustomId("captain_id")
-        .setLabel("Captain Discord ID")
+        .setLabel("Captain Username (e.g. kishash)")
         .setStyle(TextInputStyle.Short)
-        .setValue(captainId ?? "")
+        .setValue(captainDisplay)
         .setRequired(true);
 
     const colorInput = new TextInputBuilder()
         .setCustomId("team_color")
-        .setLabel("Team Color (hex, e.g. #841617)")
+        .setLabel("Team Color hex (e.g. 841617)")
         .setStyle(TextInputStyle.Short)
-        .setValue(team.color ?? "")
+        .setValue((team.color ?? "").replace("#", ""))
         .setRequired(true);
 
     modal.addComponents(
@@ -92,41 +95,53 @@ async function handleSelect(interaction) {
 
 async function handleModal(interaction) {
 
-    if (!interaction.isModalSubmit() || !interaction.customId.startsWith("editteam_modal|")) return false;
+    if (interaction.type !== 5 || !interaction.customId.startsWith("editteam_modal|")) return false;
 
     const originalName = interaction.customId.split("|")[1];
     const newName      = interaction.fields.getTextInputValue("team_name").trim();
-    const captainId    = interaction.fields.getTextInputValue("captain_id").trim();
-    const color        = interaction.fields.getTextInputValue("team_color").trim();
+    const username     = interaction.fields.getTextInputValue("captain_id").trim().toLowerCase();
+    let   color        = interaction.fields.getTextInputValue("team_color").trim().replace("#", "");
 
+    color = `#${color}`;
     if (!/^#[0-9A-Fa-f]{6}$/.test(color)) {
         return interaction.reply({
-            content: "❌ Invalid hex color. Use format `#RRGGBB`.",
+            content: "❌ Invalid hex color. Use 6 characters e.g. `841617`.",
             flags: 64
         });
     }
 
-    const teams = getTeams();
-    const index = teams.findIndex(t => t.label === originalName);
+    await interaction.guild.members.fetch();
+    const member = interaction.guild.members.cache.find(
+        m => m.user.username.toLowerCase() === username ||
+             m.displayName.toLowerCase()   === username
+    );
 
-    if (index === -1) {
-        return interaction.reply({ content: `❌ Team **${originalName}** not found.`, flags: 64 });
+    if (!member) {
+        return interaction.reply({
+            content: `❌ Couldn't find a member with username **${username}** in this server.`,
+            flags: 64
+        });
     }
 
-    teams[index] = {
+    const captainId = member.user.id;
+
+    // If the name changed, delete the old document first
+    if (newName !== originalName) {
+        await deleteTeam(originalName);
+    }
+
+    await saveTeam({
         label: newName,
         value: `${newName}|${captainId}`,
         color
-    };
-
-    saveTeams(teams);
+    });
 
     const embed = new EmbedBuilder()
         .setTitle("✅ Team Updated")
         .addFields(
-            { name: "Team",    value: newName,            inline: true },
-            { name: "Captain", value: `<@${captainId}>`,  inline: true },
-            { name: "Color",   value: color,              inline: true }
+            { name: "Team",    value: newName,                                     inline: true },
+            { name: "Captain", value: `<@${captainId}> (${member.user.username})`, inline: true },
+            { name: "Color",   value: color,                                       inline: true }
         )
         .setColor(color);
 
